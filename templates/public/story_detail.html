@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+{% load static dnw %}
+{% block title %}{{ story.title }} – doanhnhan.wiki{% endblock %}
+{% block description %}{{ story.summary|default:story.title }}{% endblock %}
+
+{% block canonical %}<link rel="canonical" href="{{ SITE_URL }}{{ story.get_absolute_url }}">{% endblock %}
+
+{% block meta %}
+<meta property="og:title" content="{{ story.title }} – doanhnhan.wiki">
+<meta property="og:description" content="{{ story.summary|default:story.title }}">
+<meta property="og:type" content="article">
+<meta property="og:url" content="{{ request.build_absolute_uri }}">
+{% if story.cover_image %}
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ story.cover_image.url }}">
+<meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{{ story.cover_image.url }}">
+{% else %}
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% url 'public:default_og_image' %}">
+{% endif %}
+<meta property="article:published_time" content="{{ story.published_at|date:'c' }}">
+<meta property="article:modified_time" content="{{ story.updated_at|date:'c' }}">
+<meta property="article:author" content="{{ story.author_name }}">
+<meta property="article:section" content="{{ story.get_story_type_display }}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ story.title }}">
+<meta name="twitter:description" content="{{ story.summary|default:story.title }}">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "NewsArticle",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "{{ request.build_absolute_uri }}"
+      },
+      "headline": "{{ story.title|escapejs }}",
+      "description": "{{ story.summary|default:story.title|escapejs }}",
+      "image": [
+        {% if story.cover_image %}"{{ request.scheme }}://{{ request.get_host }}{{ story.cover_image.url }}"{% else %}"{{ request.scheme }}://{{ request.get_host }}{% url 'public:default_og_image' %}"{% endif %}
+      ],
+      "datePublished": "{{ story.published_at|date:'c' }}",
+      "dateModified": "{{ story.updated_at|date:'c' }}",
+      "author": [{
+        "@type": "Person",
+        "name": "{{ story.author_name|default:'Ban biên tập doanhnhan.wiki'|escapejs }}"
+      }],
+      "publisher": {
+        "@type": "Organization",
+        "name": "doanhnhan.wiki",
+        "url": "{{ request.scheme }}://{{ request.get_host }}"
+      },
+      "articleSection": "{{ story.get_story_type_display|escapejs }}"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Trang chủ",
+          "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'public:home' %}"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Story",
+          "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'public:story_list' %}"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "{{ story.title|escapejs }}",
+          "item": "{{ request.build_absolute_uri }}"
+        }
+      ]
+    }
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<article class="story-article-page">
+  <!-- Header bài viết -->
+  <header class="story-article-header">
+    <div class="container container-reading">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="{% url 'public:home' %}">Trang chủ</a>
+        <span class="sep">/</span>
+        <a href="{% url 'public:story_list' %}">Story</a>
+        <span class="sep">/</span>
+        <span>{{ story.get_story_type_display }}</span>
+      </nav>
+
+      <div class="story-badge-wrap">
+        <span class="chip chip-solid-gold">{{ story.get_story_type_display }}</span>
+        {% if story.is_featured %}
+          <span class="chip chip-gold">Tiêu điểm</span>
+        {% endif %}
+      </div>
+
+      <h1 class="story-article-title">{{ story.title }}</h1>
+
+      {% if story.summary %}
+        <p class="story-article-lead">{{ story.summary }}</p>
+      {% endif %}
+
+      <div class="story-byline-bar">
+        <div class="story-author-box">
+          <div class="story-author-initial">{{ story.author_name|slice:":1"|upper }}</div>
+          <div class="story-author-details">
+            <span class="story-author-title">{{ story.author_name }}</span>
+            <span class="story-date-line">
+              Xuất bản: {{ story.published_at|date:"d/m/Y · H:i" }} · {{ story.reading_time_minutes }} phút đọc · {{ story.views_count }} lượt xem
+            </span>
+          </div>
+        </div>
+
+        <div class="story-share-actions" style="display:flex;align-items:center;gap:10px">
+          <button type="button" class="btn-like-heart" data-like-btn data-type="story" data-id="{{ story.id }}" data-count="{{ story.likes_count|default:0 }}" style="padding:6px 14px;font-size:13.5px" title="Thả tim bài viết">
+            <svg class="heart-icon" viewBox="0 0 24 24" width="18" height="18"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span class="like-count" data-like-count>{{ story.likes_count|default:0 }}</span>
+            <span style="font-weight:500;margin-left:2px">Thích</span>
+          </button>
+
+          <button type="button" class="btn btn-sm btn-outline" data-share-url="{{ request.build_absolute_uri }}" title="Chia sẻ bài viết">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            <span>Chia sẻ</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Ảnh bìa lớn nếu có -->
+  {% if story.cover_image %}
+    <div class="container container-reading" style="margin-top:24px;margin-bottom:32px">
+      <figure class="story-featured-image-box">
+        <img src="{{ story.cover_image.url }}" alt="{{ story.title }}" class="story-featured-img">
+        {% if story.cover_caption %}
+          <figcaption class="story-image-caption">{{ story.cover_caption }}</figcaption>
+        {% endif %}
+      </figure>
+    </div>
+  {% endif %}
+
+  <!-- Nội dung bài viết chính -->
+  <div class="container container-reading">
+    <div class="story-article-body article-content">
+      {{ story.content_md|md|safe }}
+    </div>
+
+    <!-- Hộp nguồn & xuất bản -->
+    {% if story.source_name or story.source_url %}
+      <div class="story-source-box">
+        <span class="source-label">Nguồn tham khảo:</span>
+        {% if story.source_url %}
+          <a href="{{ story.source_url }}" target="_blank" rel="noopener noreferrer" class="source-link">
+            {{ story.source_name|default:story.source_url }} ↗
+          </a>
+        {% else %}
+          <span class="source-name">{{ story.source_name }}</span>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <!-- Thẻ kết nối đối tượng Wiki liên quan (Doanh nhân hoặc Doanh nghiệp) -->
+    {% if story.featured_person %}
+      <div class="story-entity-card card">
+        <div class="story-entity-avatar">
+          {% if story.featured_person.avatar %}
+            <img src="{{ story.featured_person.avatar.url }}" alt="{{ story.featured_person.full_name }}">
+          {% else %}
+            <span>{{ story.featured_person.full_name|initials }}</span>
+          {% endif %}
+        </div>
+        <div class="story-entity-meta">
+          <div class="eyebrow" style="margin-bottom:4px">Nhân vật trong bài viết</div>
+          <h3 class="story-entity-name">{{ story.featured_person.full_name }}</h3>
+          <p class="story-entity-desc">{{ story.featured_person.headline|default:"Doanh nhân tiêu biểu" }}</p>
+          <a href="{{ story.featured_person.get_absolute_url }}" class="btn btn-sm btn-gold" style="margin-top:8px">
+            Xem hồ sơ bách khoa toàn thư →
+          </a>
+        </div>
+      </div>
+    {% elif story.featured_company %}
+      <div class="story-entity-card card">
+        <div class="story-entity-avatar is-company">
+          {% if story.featured_company.logo %}
+            <img src="{{ story.featured_company.logo.url }}" alt="{{ story.featured_company.display_name }}">
+          {% else %}
+            <span>🏢</span>
+          {% endif %}
+        </div>
+        <div class="story-entity-meta">
+          <div class="eyebrow" style="margin-bottom:4px">Doanh nghiệp trong bài viết</div>
+          <h3 class="story-entity-name">{{ story.featured_company.display_name }}</h3>
+          <p class="story-entity-desc">{{ story.featured_company.short_intro|default:story.featured_company.legal_name }}</p>
+          <a href="{{ story.featured_company.get_absolute_url }}" class="btn btn-sm btn-gold" style="margin-top:8px">
+            Xem hồ sơ doanh nghiệp →
+          </a>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Hộp kêu gọi gửi câu chuyện / liên hệ -->
+    <div class="story-callout-box">
+      <div class="callout-icon">💡</div>
+      <div class="callout-content">
+        <h4>Bạn có câu chuyện hoặc đề xuất nhân vật doanh nhân tiêu biểu?</h4>
+        <p>doanhnhan.wiki luôn trân trọng những câu chuyện truyền cảm hứng, bài học thương trường và dấu mốc cống hiến vì cộng đồng.</p>
+        <div class="callout-actions">
+          <a href="{% url 'public:contact' %}" class="btn btn-sm btn-dark">Gửi câu chuyện / Liên hệ phỏng vấn</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- Bài viết khác / Đọc tiếp -->
+{% if related_stories %}
+<section class="section" style="background:var(--sand);margin-top:48px;padding:44px 0">
+  <div class="container">
+    <div class="row between" style="margin-bottom:20px">
+      <div>
+        <p class="eyebrow eyebrow-dark">Đón đọc thêm</p>
+        <h2 style="font-family:var(--font-serif);font-size:26px">Những câu chuyện khác</h2>
+      </div>
+      <a href="{% url 'public:story_list' %}" class="btn btn-outline" style="background:#fff">Tất cả câu chuyện →</a>
+    </div>
+
+    <div class="story-grid">
+      {% for r in related_stories %}
+        <article class="story-card card">
+          <a href="{{ r.get_absolute_url }}" class="story-card-thumb-wrap">
+            {% if r.cover_image %}
+              <img src="{{ r.cover_image.url }}" alt="{{ r.title }}" class="story-card-thumb" loading="lazy">
+            {% else %}
+              <div class="story-card-placeholder">
+                <span class="story-placeholder-icon">📖</span>
+              </div>
+            {% endif %}
+            <span class="story-card-type-tag">{{ r.get_story_type_display }}</span>
+          </a>
+          <div class="story-card-body">
+            <div class="story-card-meta-top">
+              <span class="story-date">{{ r.published_at|date:"d/m/Y" }}</span>
+              <span class="dot">·</span>
+              <span class="story-reading-time">{{ r.reading_time_minutes }} phút</span>
+            </div>
+            <h3 class="story-card-title">
+              <a href="{{ r.get_absolute_url }}">{{ r.title }}</a>
+            </h3>
+            <p class="story-card-summary">
+              {{ r.summary|default:r.content_md|truncatewords:20 }}
+            </p>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

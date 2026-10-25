@@ -1,0 +1,878 @@
+{% extends "staff/base.html" %}
+{% load static %}
+{% block title %}Cào Dữ Liệu & Lên Bài Tự Động bằng AI{% endblock %}
+
+{% block content %}
+<div class="staff-header row between" style="margin-bottom:20px;align-items:flex-start">
+  <div>
+    <div class="breadcrumb light" style="margin-bottom:6px">
+      <a href="{% url 'staff:dashboard' %}">Bảng quản trị</a>
+      <span>/</span>
+      <span>Cào dữ liệu &amp; Lên bài AI</span>
+    </div>
+    <h1 style="font-size:24px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:8px">
+      <span>⚡ Cào Dữ Liệu &amp; Lên Bài Tự Động bằng AI</span>
+    </h1>
+    <p class="muted" style="font-size:14px;margin-top:4px">
+      Chỉ cần dán link bài báo chính thống. AI sẽ tự động đọc hiểu, viết lại bài chuẩn bách khoa, tải ảnh bìa, trích dẫn nguồn gốc và đăng bài lên website.
+    </p>
+  </div>
+  <a href="{% url 'staff:ai_crawler' %}" class="btn btn-outline btn-sm">Làm mới trang</a>
+</div>
+
+<!-- BANNER TRẠNG THÁI CẤU HÌNH AI -->
+<div class="card" style="margin-bottom:20px;padding:14px 18px;border-left:4px solid {% if ai_config.has_key %}#16a34a{% else %}#eab308{% endif %};background:{% if ai_config.has_key %}#f0fdf4{% else %}#fefce8{% endif %};display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,0.03)">
+  <div style="display:flex;align-items:center;gap:12px">
+    <span style="font-size:22px">{% if ai_config.has_key %}🟢{% else %}⚠️{% endif %}</span>
+    <div>
+      <div style="font-size:14.5px;font-weight:700;color:{% if ai_config.has_key %}#166534{% else %}#854d0e{% endif %}">
+        {% if ai_config.has_key %}
+          Google Gemini AI: Đang sẵn sàng (Model: <code>{{ ai_config.model }}</code>)
+        {% else %}
+          Chưa cấu hình Google Gemini API Key
+        {% endif %}
+      </div>
+      <div style="font-size:12.5px;color:var(--muted);margin-top:2px">
+        {% if ai_config.has_key %}
+          Mã API Key đã kết nối: <code style="background:rgba(0,0,0,0.06);padding:2px 6px;border-radius:4px">{{ ai_config.masked_key }}</code> (Nguồn: {{ ai_config.source }})
+        {% else %}
+          Hệ thống đang chạy chế độ bóc tách quy tắc dự phòng. Để AI viết bài hay và đầy đủ thông tin nhất, hãy dán API Key vào Cài đặt.
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <a href="{% url 'staff:site_settings' %}" class="btn btn-sm {% if ai_config.has_key %}btn-outline{% else %}btn-gold{% endif %}" style="white-space:nowrap;font-weight:600">
+    ⚙️ {% if ai_config.has_key %}Cài đặt AI &amp; Đổi Key{% else %}Nhập Gemini API Key tại đây ↗{% endif %}
+  </a>
+</div>
+
+<!-- KHỐI 1: KHU VỰC DÁN LINK VÀ LÊN BÀI 1-CLICK (SIÊU ĐƠN GIẢN) -->
+<div class="card" style="margin-bottom:24px;border:1px solid var(--line);box-shadow:0 4px 16px rgba(11,26,46,0.06);padding:24px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+    <div style="font-weight:700;font-size:18px;color:var(--navy);display:flex;align-items:center;gap:8px">
+      <span>🚀</span> <span>Dán link bài báo &amp; Lên bài ngay tức thì</span>
+    </div>
+    <div class="tabs" style="margin:0" role="tablist">
+      <button type="button" class="tab active" id="tab-url-btn" onclick="switchInputMode('url')" style="font-size:13px;padding:6px 12px">Dán link (URL)</button>
+      <button type="button" class="tab" id="tab-text-btn" onclick="switchInputMode('text')" style="font-size:13px;padding:6px 12px">Dán văn bản</button>
+    </div>
+  </div>
+
+  <form id="crawler-input-form" onsubmit="event.preventDefault(); startCrawling(true);">
+    {% csrf_token %}
+    
+    <div id="input-mode-url" class="field" style="margin-bottom:16px">
+      <div style="position:relative">
+        <input type="url" id="crawler-url" name="url" class="input" 
+               style="width:100%;height:52px;font-size:16px;padding:0 16px;border:2px solid var(--line);border-radius:8px;box-shadow:inset 0 1px 3px rgba(0,0,0,0.03)" 
+               placeholder="Dán link bài báo vào đây... (VnExpress, Tuổi Trẻ, CafeF, Doanh Nhân Sài Gòn, Forbes...)" 
+               autocomplete="off" autofocus>
+      </div>
+      <div class="help" style="font-size:13px;color:var(--muted);margin-top:6px;display:flex;align-items:center;gap:6px">
+        <span>💡</span> <span>Hệ thống tự động nhận diện cơ quan báo chí, tải ảnh bài viết và trích dẫn nguồn chuẩn 100%.</span>
+      </div>
+    </div>
+
+    <div id="input-mode-text" class="field" style="display:none;margin-bottom:16px">
+      <label for="crawler-raw-text" style="font-weight:600">Nội dung bài viết / tài liệu</label>
+      <textarea id="crawler-raw-text" name="raw_text" class="input" style="width:100%;min-height:140px;font-family:inherit" placeholder="Dán toàn bộ nội dung bài báo hoặc đoạn giới thiệu vào đây..."></textarea>
+    </div>
+
+    <!-- TÙY CHỌN GỢI Ý THÊM (THU GỌN) -->
+    <details style="margin-bottom:18px;background:var(--sand-light,#fbfaf8);padding:10px 14px;border-radius:6px;border:1px dashed var(--line)">
+      <summary style="font-size:13px;font-weight:600;color:var(--navy);cursor:pointer">
+        ⚙️ Gợi ý trọng tâm hoặc từ khóa chính <span class="muted" style="font-weight:400">(Tùy chọn, không bắt buộc)</span>
+      </summary>
+      <div style="margin-top:10px">
+        <input type="text" id="crawler-hints" name="hints" class="input" style="width:100%" placeholder="Ví dụ: Ông Trần Bá Dương, Tập đoàn THACO... để AI tập trung viết sâu về nhân vật này">
+      </div>
+    </details>
+
+    <!-- NÚT HÀNH ĐỘNG CHÍNH -->
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <button type="button" id="btn-crawl-auto" onclick="startCrawling(true)" class="btn btn-gold" 
+              style="min-height:48px;padding:0 28px;font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;box-shadow:0 2px 8px rgba(217,119,6,0.25)">
+        <span>⚡ LÊN BÀI NGAY BẰNG AI (1-Click)</span>
+      </button>
+
+      <button type="button" id="btn-crawl-preview" onclick="startCrawling(false)" class="btn btn-outline" 
+              style="min-height:48px;padding:0 20px;font-size:14px;font-weight:600">
+        <span>🔍 Bóc tách &amp; Xem trước thủ công</span>
+      </button>
+    </div>
+
+    <!-- KHỐI QUY TRÌNH TỰ ĐỘNG BẢO ĐẢM -->
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)">
+      <span style="color:#16a34a;font-weight:600">✓ Tự động đọc bài gốc</span>
+      <span style="color:#16a34a;font-weight:600">✓ AI viết lại bách khoa/phóng sự</span>
+      <span style="color:#16a34a;font-weight:600">✓ Tự tải ảnh bìa chất lượng cao</span>
+      <span style="color:#b45309;font-weight:700">✓ Bắt buộc dẫn nguồn bài gốc 100%</span>
+      <span style="color:#16a34a;font-weight:600">✓ Đăng bài tức thì</span>
+    </div>
+  </form>
+</div>
+
+<!-- KHỐI 2: THANH TIẾN TRÌNH TRỰC QUAN KHI ĐANG CHẠY (ANIMATED PROGRESS) -->
+<div id="crawler-loading-box" class="card" style="display:none;margin-bottom:24px;border:1px solid #fed7aa;background:#fffbf5;padding:24px">
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+    <div class="spinner-circle" style="width:32px;height:32px;border-width:3px;border-color:#d97706 transparent transparent transparent"></div>
+    <div>
+      <h3 id="progress-main-title" style="font-size:17px;color:var(--navy);margin:0;font-weight:700">
+        Đang xử lý bài viết tự động bằng AI...
+      </h3>
+      <p id="progress-sub-title" style="font-size:13px;color:var(--muted);margin:4px 0 0 0">
+        Vui lòng đợi giây lát, hệ thống đang đọc bài báo, viết lại nội dung và chuẩn bị xuất bản.
+      </p>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:14px">
+    <div id="step-1" class="step-card" style="background:#fff;border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-size:13px">
+      <span style="font-weight:700;color:var(--navy)">🌐 Bước 1:</span> Tải bài viết từ đường link
+    </div>
+    <div id="step-2" class="step-card" style="background:#fff;border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-size:13px">
+      <span style="font-weight:700;color:var(--navy)">🧠 Bước 2:</span> AI đọc hiểu &amp; viết lại bài
+    </div>
+    <div id="step-3" class="step-card" style="background:#fff;border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-size:13px">
+      <span style="font-weight:700;color:var(--navy)">📸 Bước 3:</span> Tải ảnh bìa bài báo
+    </div>
+    <div id="step-4" class="step-card" style="background:#fff;border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-size:13px">
+      <span style="font-weight:700;color:var(--navy)">📌 Bước 4:</span> Trích dẫn nguồn &amp; Đăng bài
+    </div>
+  </div>
+</div>
+
+<!-- KHỐI 3: THÔNG BÁO LỖI NẾU CÓ -->
+<div id="crawler-error-box" class="flash flash-error" style="display:none;margin-bottom:24px"></div>
+
+<!-- KHỐI 4: KẾT QUẢ XUẤT BẢN THÀNH CÔNG (1-CLICK PUBLISH SUCCESS CARD) -->
+<div id="crawler-success-area" class="card" style="display:none;margin-bottom:24px;border:2px solid #22c55e;background:#f0fdf4;padding:24px;box-shadow:0 4px 16px rgba(34,197,94,0.12)">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:18px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="font-size:32px">🎉</span>
+      <div>
+        <h2 style="font-size:20px;font-weight:700;color:#166534;margin:0">
+          ĐÃ LÊN BÀI VÀ XUẤT BẢN THÀNH CÔNG!
+        </h2>
+        <p style="font-size:13.5px;color:#15803d;margin:4px 0 0 0">
+          Bài viết đã được AI biên tập chuẩn mực bách khoa, tải ảnh bìa và dẫn nguồn đầy đủ lên website.
+        </p>
+      </div>
+    </div>
+    <button type="button" onclick="resetCrawlerForm()" class="btn btn-sm btn-navy" style="font-weight:600">
+      ➕ Tiếp tục dán link bài khác
+    </button>
+  </div>
+
+  <!-- THÔNG TIN BÀI VIẾT VỪA ĐĂNG -->
+  <div style="background:#ffffff;border:1px solid #bbf7d0;border-radius:8px;padding:18px;margin-bottom:18px;display:flex;gap:20px;flex-wrap:wrap">
+    <div id="success-cover-wrap" style="flex:0 0 180px;display:none">
+      <img id="success-cover-img" src="" alt="Ảnh bìa bài viết" style="width:100%;height:120px;object-fit:cover;border-radius:6px;border:1px solid var(--line);box-shadow:0 2px 6px rgba(0,0,0,0.06)">
+    </div>
+    <div style="flex:1 1 300px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span id="success-story-badge" class="badge" style="background:#e0f2fe;color:#0369a1;font-weight:600;font-size:12px;padding:3px 8px;border-radius:4px">
+          Câu chuyện (Story)
+        </span>
+        <span style="font-size:12.5px;color:var(--muted)">Đã xuất bản trực tiếp</span>
+      </div>
+      <h3 id="success-story-title" style="font-size:18px;font-weight:700;color:var(--navy);margin:0 0 8px 0;line-height:1.4"></h3>
+      <p id="success-story-summary" style="font-size:13.5px;color:var(--ink);line-height:1.5;margin:0 0 12px 0"></p>
+
+      <!-- KHỐI DẪN NGUỒN BẮT BUỘC -->
+      <div style="background:#f8fafc;border-left:4px solid #d97706;padding:10px 14px;border-radius:4px;font-size:13px">
+        <div style="font-weight:700;color:#92400e;display:flex;align-items:center;gap:6px;margin-bottom:3px">
+          <span>📌</span> <span>Đã trích dẫn nguồn bài viết gốc:</span>
+        </div>
+        <div style="color:var(--ink)">
+          <a id="success-source-link" href="#" target="_blank" rel="noopener" style="font-weight:600;color:var(--navy);text-decoration:underline"></a>
+          <span style="color:var(--muted)"> — Cơ quan xuất bản: </span>
+          <b id="success-source-publisher" style="color:var(--navy)"></b>
+        </div>
+      </div>
+
+      <!-- CÁC HỒ SƠ ĐÃ LIÊN KẾT (NẾU CÓ) -->
+      <div id="success-linked-entities" style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap"></div>
+    </div>
+  </div>
+
+  <!-- NÚT TRUY CẬP TRỰC TIẾP -->
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <a id="success-btn-view-story" href="#" target="_blank" class="btn btn-gold" style="font-weight:700;padding:10px 22px;font-size:15px;display:flex;align-items:center;gap:6px">
+      <span>👁️ Xem bài viết vừa đăng trên Website ↗</span>
+    </a>
+    <a id="success-btn-view-wiki" href="#" target="_blank" class="btn btn-outline" style="font-weight:600;padding:10px 18px;font-size:14px;display:none">
+      <span>👤 Xem hồ sơ Wiki ↗</span>
+    </a>
+    <button type="button" onclick="resetCrawlerForm()" class="btn btn-outline" style="padding:10px 18px;font-size:14px">
+      Dán bài tiếp theo
+    </button>
+  </div>
+</div>
+
+<!-- KHỐI 5: KẾT QUẢ BÓC TÁCH THỦ CÔNG (KHI BẤM "BÓC TÁCH & XEM TRƯỚC") -->
+<div id="crawler-result-area" style="display:none">
+  <!-- Thẻ tóm tắt nguồn cào được -->
+  <div class="card" style="margin-bottom:20px;background:var(--sand-light,#f9f8f4);border:1px solid var(--line)">
+    <div class="row between" style="align-items:flex-start">
+      <div>
+        <div class="eyebrow" style="color:var(--gold-dark);margin-bottom:4px">Nguồn bài viết đã trích xuất</div>
+        <h3 id="res-source-title" style="font-size:18px;margin-bottom:4px;color:var(--navy)"></h3>
+        <p style="font-size:13px;color:var(--muted);margin:0">
+          <span id="res-source-publisher" style="font-weight:600;color:var(--ink)"></span>
+          <span id="res-source-date-wrap"> · <span id="res-source-date"></span></span>
+          <span id="res-source-words-wrap"> · Độ dài: <span id="res-source-words"></span> từ</span>
+        </p>
+      </div>
+      <a id="res-source-link" href="#" target="_blank" rel="noopener" class="btn btn-sm btn-outline" style="white-space:nowrap">
+        Xem bài gốc ↗
+      </a>
+    </div>
+    <div id="res-source-snippet" style="font-size:13px;color:var(--muted-2);margin-top:10px;line-height:1.5;border-top:1px dashed var(--line);padding-top:8px"></div>
+
+    <!-- KHỐI ẢNH ĐẠI DIỆN BÓC TÁCH ĐƯỢC TỪ BÀI BÁO -->
+    <div id="res-source-img-wrap" style="display:none;margin-top:12px;align-items:center;gap:16px;background:#ffffff;padding:12px 14px;border-radius:6px;border:1px solid var(--line)">
+      <img id="res-source-img" src="" alt="Ảnh đại diện bài báo" style="width:120px;height:84px;object-fit:cover;border-radius:4px;border:1px solid var(--line);box-shadow:0 1px 3px rgba(0,0,0,0.08)">
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:13.5px;color:var(--navy);display:flex;align-items:center;gap:6px">
+          <span>📸</span> <span>Ảnh đại diện trích xuất từ bài báo</span>
+        </div>
+        <p style="font-size:12.5px;color:var(--muted);margin:4px 0 0 0;line-height:1.4">
+          Hệ thống sẽ tự động tải file ảnh này về máy chủ làm ảnh bìa Story và ảnh chân dung hồ sơ.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form chỉnh sửa và lưu vào hệ thống -->
+  <form id="save-crawled-form" method="post" action="{% url 'staff:ai_crawler_save' %}">
+    {% csrf_token %}
+    <input type="hidden" name="source_url" id="form-source-url">
+    <input type="hidden" name="source_title" id="form-source-title">
+    <input type="hidden" name="source_publisher" id="form-source-publisher">
+    <input type="hidden" name="image_url" id="form-image-url">
+
+    <!-- Cảnh báo trùng lặp (nếu phát hiện trong database) -->
+    <div id="dup-warning-box" style="display:none;margin-bottom:16px"></div>
+
+    <!-- KHỐI BIÊN TẬP BÀI VIẾT (STORY) -->
+    <div class="card" style="margin-bottom:24px;border-top:4px solid var(--navy);padding:20px">
+      <div class="row between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px">
+        <div style="font-size:16px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:6px">
+          <span>📰</span> <span>Bài viết &amp; Câu chuyện (Story)</span>
+        </div>
+        <label class="check" style="font-weight:600;font-size:13.5px;color:var(--ink)">
+          <input type="checkbox" name="save_story" id="cb-save-story" value="1" checked>
+          Đăng bài viết này
+        </label>
+      </div>
+
+      <div class="stack" style="gap:12px">
+        <div class="field">
+          <label for="story_title" style="font-weight:600">Tiêu đề bài viết</label>
+          <input type="text" name="story_title" id="story_title" class="input" style="width:100%;font-weight:600;font-size:15px">
+        </div>
+
+        <div class="row" style="gap:12px">
+          <div class="field" style="flex:1">
+            <label for="story_type" style="font-size:13px;font-weight:600">Phân loại câu chuyện</label>
+            <select name="story_type" id="story_type" class="select" style="width:100%">
+              <option value="portrait">Chân dung nhân vật</option>
+              <option value="journey">Hành trình khởi nghiệp</option>
+              <option value="case_study">Bài học thương trường</option>
+              <option value="event">Phóng sự sự kiện</option>
+              <option value="interview">Phỏng vấn chuyên sâu</option>
+              <option value="insight">Góc nhìn doanh nhân</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="story_summary" style="font-weight:600">Tóm tắt / Sa-pô bài viết</label>
+          <textarea name="story_summary" id="story_summary" class="input" style="width:100%;min-height:75px"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="story_content_md" style="font-weight:600;display:flex;justify-content:space-between">
+            <span>Toàn văn bài viết (Markdown - Đã kèm khối dẫn nguồn bắt buộc)</span>
+          </label>
+          <textarea name="story_content_md" id="story_content_md" class="input" style="width:100%;min-height:180px;font-family:monospace;font-size:13.5px;line-height:1.5"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" style="align-items:flex-start;gap:20px;margin-bottom:24px">
+      <!-- CỘT 1: HỒ SƠ DOANH NHÂN -->
+      <div class="grow card" style="flex:1 1 450px;border-top:4px solid var(--gold);padding:20px">
+        <div class="row between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px">
+          <div style="font-size:16px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:6px">
+            <span>👤</span> <span>Hồ sơ Doanh nhân</span>
+          </div>
+          <label class="check" style="font-weight:600;font-size:13.5px;color:var(--ink)">
+            <input type="checkbox" name="save_person" id="cb-save-person" value="1" checked onchange="togglePersonSection(this.checked)">
+            Lưu hồ sơ này
+          </label>
+        </div>
+
+        <div id="person-fields-wrapper" class="stack" style="gap:12px">
+          <input type="hidden" name="person_id" id="person_id">
+
+          <div class="field">
+            <label for="person_full_name" style="font-weight:600">Họ và tên <span style="color:red">*</span></label>
+            <input type="text" name="person_full_name" id="person_full_name" class="input" style="width:100%;font-weight:600;font-size:15px">
+          </div>
+
+          <div class="field">
+            <label for="person_headline" style="font-weight:600">Dòng chức danh tóm tắt</label>
+            <input type="text" name="person_headline" id="person_headline" class="input" style="width:100%" placeholder="Ví dụ: Sáng lập &amp; Chủ tịch HĐQT...">
+          </div>
+
+          <div class="field">
+            <label for="person_birth_year" style="font-weight:600">Năm sinh</label>
+            <input type="number" name="person_birth_year" id="person_birth_year" class="input" style="width:100%" placeholder="Ví dụ: 1985">
+          </div>
+
+          <div class="row" style="gap:10px">
+            <div class="field" style="flex:1">
+              <label for="person_hometown_id" style="font-size:13px">Quê quán (Tỉnh/Thành)</label>
+              <select name="person_hometown_id" id="person_hometown_id" class="select" style="width:100%">
+                <option value="">-- Chưa rõ --</option>
+                {% for p in provinces %}<option value="{{ p.pk }}">{{ p.name }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="field" style="flex:1">
+              <label for="person_current_province_id" style="font-size:13px">Nơi hoạt động chính</label>
+              <select name="person_current_province_id" id="person_current_province_id" class="select" style="width:100%">
+                <option value="">-- Chưa rõ --</option>
+                {% for p in provinces %}<option value="{{ p.pk }}">{{ p.name }}</option>{% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="person_summary" style="font-weight:600">Đoạn văn tóm tắt mở đầu (Summary)</label>
+            <textarea name="person_summary" id="person_summary" class="input" style="width:100%;min-height:75px"></textarea>
+          </div>
+
+          <div class="field">
+            <label for="person_biography" style="font-weight:600">Tiểu sử &amp; Học vấn</label>
+            <textarea name="person_biography" id="person_biography" class="input" style="width:100%;min-height:75px"></textarea>
+          </div>
+
+          <div class="field">
+            <label for="person_journey" style="font-weight:600">Hành trình khởi nghiệp &amp; Sự nghiệp</label>
+            <textarea name="person_journey" id="person_journey" class="input" style="width:100%;min-height:90px"></textarea>
+          </div>
+
+          <div class="field">
+            <label for="person_philosophy" style="font-weight:600">Triết lý kinh doanh / Câu nói</label>
+            <textarea name="person_philosophy" id="person_philosophy" class="input" style="width:100%;min-height:60px"></textarea>
+          </div>
+
+          <!-- Danh sách dấu mốc thời gian -->
+          <div class="field">
+            <label style="font-weight:600;display:flex;justify-content:space-between">
+              <span>Dấu mốc sự nghiệp (Milestones)</span>
+              <button type="button" class="btn btn-sm btn-outline" onclick="addMilestoneRow('', '', 'other')">+ Thêm mốc</button>
+            </label>
+            <div id="milestones-container" class="stack" style="gap:8px;margin-top:6px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CỘT 2: HỒ SƠ DOANH NGHIỆP -->
+      <div class="grow card" style="flex:1 1 450px;border-top:4px solid var(--navy);padding:20px">
+        <div class="row between" style="margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:10px">
+          <div style="font-size:16px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:6px">
+            <span>🏢</span> <span>Hồ sơ Doanh nghiệp</span>
+          </div>
+          <label class="check" style="font-weight:600;font-size:13.5px;color:var(--ink)">
+            <input type="checkbox" name="save_company" id="cb-save-company" value="1" checked onchange="toggleCompanySection(this.checked)">
+            Lưu hồ sơ này
+          </label>
+        </div>
+
+        <div id="company-fields-wrapper" class="stack" style="gap:12px">
+          <input type="hidden" name="company_id" id="company_id">
+
+          <div class="field">
+            <label for="company_legal_name" style="font-weight:600">Tên pháp lý công ty <span style="color:red">*</span></label>
+            <input type="text" name="company_legal_name" id="company_legal_name" class="input" style="width:100%;font-weight:600;font-size:15px">
+          </div>
+
+          <div class="row" style="gap:10px">
+            <div class="field" style="flex:1">
+              <label for="company_brand_name" style="font-weight:600">Tên thương hiệu / Viết tắt</label>
+              <input type="text" name="company_brand_name" id="company_brand_name" class="input" style="width:100%" placeholder="Ví dụ: THACO, FPT, Masan...">
+            </div>
+            <div class="field" style="flex:1">
+              <label for="company_tax_code" style="font-weight:600">Mã số thuế</label>
+              <input type="text" name="company_tax_code" id="company_tax_code" class="input" style="width:100%" placeholder="Ví dụ: 0301234567">
+            </div>
+          </div>
+
+          <div class="row" style="gap:10px">
+            <div class="field" style="flex:1">
+              <label for="company_founded_year" style="font-size:13px">Năm thành lập</label>
+              <input type="number" name="company_founded_year" id="company_founded_year" class="input" style="width:100%" placeholder="Ví dụ: 2010">
+            </div>
+            <div class="field" style="flex:1">
+              <label for="company_size_band" style="font-size:13px">Quy mô nhân sự</label>
+              <select name="company_size_band" id="company_size_band" class="select" style="width:100%">
+                <option value="">-- Chưa rõ --</option>
+                <option value="lt10">Dưới 10 người</option>
+                <option value="10_50">10 - 50 người</option>
+                <option value="50_200">50 - 200 người</option>
+                <option value="gt200">Trên 200 người</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row" style="gap:10px">
+            <div class="field" style="flex:1">
+              <label for="company_province_id" style="font-size:13px">Tỉnh / Thành phố trụ sở</label>
+              <select name="company_province_id" id="company_province_id" class="select" style="width:100%">
+                <option value="">-- Chưa rõ --</option>
+                {% for p in provinces %}<option value="{{ p.pk }}">{{ p.name }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="field" style="flex:1">
+              <label for="company_primary_sector_id" style="font-size:13px">Ngành nghề chính</label>
+              <select name="company_primary_sector_id" id="company_primary_sector_id" class="select" style="width:100%">
+                <option value="">-- Chưa rõ --</option>
+                {% for s in sectors %}<option value="{{ s.pk }}">{{ s.name }}</option>{% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="company_website" style="font-weight:600">Trang web (Website)</label>
+            <input type="url" name="company_website" id="company_website" class="input" style="width:100%" placeholder="https://...">
+          </div>
+
+          <div class="field">
+            <label for="company_address" style="font-weight:600">Địa chỉ trụ sở</label>
+            <input type="text" name="company_address" id="company_address" class="input" style="width:100%">
+          </div>
+
+          <div class="field">
+            <label for="company_overview" style="font-weight:600">Giới thiệu tổng quan doanh nghiệp</label>
+            <textarea name="company_overview" id="company_overview" class="input" style="width:100%;min-height:120px"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KHỐI QUAN HỆ DOANH NHÂN ⟷ DOANH NGHIỆP -->
+    <div id="relationship-block" class="card" style="margin-bottom:24px;background:#f8fafc;border:1px solid var(--line);padding:16px 20px">
+      <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+        <span>🔗</span> <span>Mối quan hệ giữa Doanh nhân và Doanh nghiệp này</span>
+      </div>
+      <div class="row" style="gap:14px;align-items:flex-end">
+        <div class="field" style="flex:1">
+          <label for="relationship_role" style="font-size:13px">Vai trò pháp lý</label>
+          <select name="relationship_role" id="relationship_role" class="select" style="width:100%">
+            <option value="founder_ceo">Sáng lập kiêm CEO</option>
+            <option value="founder">Người sáng lập (Founder)</option>
+            <option value="chair">Chủ tịch HĐQT</option>
+            <option value="ceo">Tổng Giám đốc (CEO)</option>
+            <option value="executive">Lãnh đạo điều hành</option>
+            <option value="shareholder">Cổ đông lớn</option>
+            <option value="board_member">Thành viên HĐQT</option>
+          </select>
+        </div>
+        <div class="field" style="flex:1">
+          <label for="relationship_title" style="font-size:13px">Chức danh cụ thể hiển thị</label>
+          <input type="text" name="relationship_title" id="relationship_title" class="input" style="width:100%" placeholder="Ví dụ: Chủ tịch HĐQT &amp; Tổng Giám đốc">
+        </div>
+        <div class="field" style="flex:0 0 140px">
+          <label for="relationship_start_year" style="font-size:13px">Năm bắt đầu</label>
+          <input type="number" name="relationship_start_year" id="relationship_start_year" class="input" style="width:100%" placeholder="Ví dụ: 2012">
+        </div>
+      </div>
+    </div>
+
+    <!-- THANH NÚT LƯU THỦ CÔNG -->
+    <div class="card" style="position:sticky;bottom:16px;z-index:10;background:#ffffff;box-shadow:0 -4px 16px rgba(0,0,0,0.08);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div style="font-size:13.5px;color:var(--muted)">
+        Kiểm tra và bấm Lưu để xuất bản nội dung lên hệ thống.
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button type="submit" name="status" value="published" class="btn btn-navy" style="font-weight:600;min-height:42px;padding:0 24px">
+          💾 Phê duyệt &amp; Xuất bản ngay
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<style>
+.spinner-circle {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--navy);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.dup-badge {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13.5px;
+}
+.step-card.active {
+  border-color: #d97706 !important;
+  background: #fffbeb !important;
+}
+.step-card.done {
+  border-color: #22c55e !important;
+  background: #f0fdf4 !important;
+  color: #166534;
+}
+</style>
+
+<script>
+let currentMode = 'url';
+
+function switchInputMode(mode) {
+  currentMode = mode;
+  document.getElementById('tab-url-btn').classList.toggle('active', mode === 'url');
+  document.getElementById('tab-text-btn').classList.toggle('active', mode === 'text');
+  document.getElementById('input-mode-url').style.display = mode === 'url' ? 'block' : 'none';
+  document.getElementById('input-mode-text').style.display = mode === 'text' ? 'block' : 'none';
+}
+
+function resetCrawlerForm() {
+  document.getElementById('crawler-url').value = '';
+  document.getElementById('crawler-raw-text').value = '';
+  document.getElementById('crawler-hints').value = '';
+  document.getElementById('crawler-success-area').style.display = 'none';
+  document.getElementById('crawler-result-area').style.display = 'none';
+  document.getElementById('crawler-error-box').style.display = 'none';
+  document.getElementById('crawler-loading-box').style.display = 'none';
+  document.getElementById('crawler-url').focus();
+}
+
+function setStep(stepNum) {
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('step-' + i);
+    if (!el) continue;
+    if (i < stepNum) {
+      el.className = 'step-card done';
+    } else if (i === stepNum) {
+      el.className = 'step-card active';
+    } else {
+      el.className = 'step-card';
+    }
+  }
+}
+
+async function startCrawling(autoPublish = true) {
+  const errorBox = document.getElementById('crawler-error-box');
+  const resultArea = document.getElementById('crawler-result-area');
+  const successArea = document.getElementById('crawler-success-area');
+  const loadingBox = document.getElementById('crawler-loading-box');
+  const btnAuto = document.getElementById('btn-crawl-auto');
+  const btnPreview = document.getElementById('btn-crawl-preview');
+
+  errorBox.style.display = 'none';
+  resultArea.style.display = 'none';
+  successArea.style.display = 'none';
+
+  let urlOrText = '';
+  if (currentMode === 'url') {
+    urlOrText = document.getElementById('crawler-url').value.trim();
+  } else {
+    urlOrText = document.getElementById('crawler-raw-text').value.trim();
+  }
+
+  if (!urlOrText) {
+    errorBox.textContent = currentMode === 'url' ? 'Vui lòng dán đường dẫn link bài báo vào ô trên.' : 'Vui lòng dán văn bản bài viết vào ô trên.';
+    errorBox.style.display = 'block';
+    return;
+  }
+
+  const hints = document.getElementById('crawler-hints').value.trim();
+
+  // Bật loading trực quan
+  btnAuto.disabled = true;
+  btnPreview.disabled = true;
+  loadingBox.style.display = 'block';
+  loadingBox.scrollIntoView({ behavior: 'smooth' });
+
+  setStep(1);
+  const stepTimer1 = setTimeout(() => setStep(2), 1200);
+  const stepTimer2 = setTimeout(() => setStep(3), 3200);
+  const stepTimer3 = setTimeout(() => setStep(4), 5200);
+
+  try {
+    const res = await fetch("{% url 'staff:ai_crawler_analyze' %}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value,
+      },
+      body: JSON.stringify({
+        url_or_text: urlOrText,
+        hints: hints,
+        auto_publish: autoPublish,
+      }),
+    });
+
+    clearTimeout(stepTimer1);
+    clearTimeout(stepTimer2);
+    clearTimeout(stepTimer3);
+
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || "Không thể phân tích bài viết này.");
+    }
+
+    // Nếu là chế độ 1-Click tự động lên bài
+    if (data.auto_published) {
+      setStep(4);
+      setTimeout(() => {
+        loadingBox.style.display = 'none';
+        renderSuccessCard(data);
+        successArea.style.display = 'block';
+        successArea.scrollIntoView({ behavior: 'smooth' });
+      }, 500);
+      return;
+    }
+
+    // Nếu là chế độ xem trước & bóc tách thủ công
+    loadingBox.style.display = 'none';
+    renderCrawledResult(data.data, data.article);
+    resultArea.style.display = 'block';
+    resultArea.scrollIntoView({ behavior: 'smooth' });
+
+  } catch (err) {
+    loadingBox.style.display = 'none';
+    errorBox.textContent = err.message || "Đã xảy ra lỗi khi xử lý bài viết.";
+    errorBox.style.display = 'block';
+  } finally {
+    btnAuto.disabled = false;
+    btnPreview.disabled = false;
+  }
+}
+
+function renderSuccessCard(data) {
+  const story = data.story || {};
+  const src = data.source || {};
+  const person = data.person || {};
+  const comp = data.company || {};
+
+  // Tiêu đề & Tóm tắt
+  document.getElementById('success-story-title').textContent = story.title || src.title || 'Bài viết đã đăng';
+  document.getElementById('success-story-summary').textContent = story.summary || '';
+  if (story.type_display) {
+    document.getElementById('success-story-badge').textContent = story.type_display;
+  }
+
+  // Ảnh bìa
+  const coverWrap = document.getElementById('success-cover-wrap');
+  const coverImg = document.getElementById('success-cover-img');
+  if (story.cover_url) {
+    coverImg.src = story.cover_url;
+    coverWrap.style.display = 'block';
+  } else {
+    coverWrap.style.display = 'none';
+  }
+
+  // Khối DẪN NGUỒN BẮT BUỘC
+  const srcLink = document.getElementById('success-source-link');
+  srcLink.textContent = src.title || src.url || 'Xem bài gốc';
+  srcLink.href = src.url || '#';
+  document.getElementById('success-source-publisher').textContent = src.publisher || 'Báo chí chính thống';
+
+  // Hồ sơ liên kết
+  const linkedBox = document.getElementById('success-linked-entities');
+  linkedBox.innerHTML = '';
+  if (person.name) {
+    linkedBox.innerHTML += `
+      <span class="badge" style="background:#f1f5f9;color:var(--navy);padding:4px 10px;border-radius:4px;font-size:12.5px;display:flex;align-items:center;gap:4px">
+        👤 Doanh nhân: <b>${person.name}</b>
+      </span>
+    `;
+  }
+  if (comp.name) {
+    linkedBox.innerHTML += `
+      <span class="badge" style="background:#f1f5f9;color:var(--navy);padding:4px 10px;border-radius:4px;font-size:12.5px;display:flex;align-items:center;gap:4px">
+        🏢 Doanh nghiệp: <b>${comp.name}</b>
+      </span>
+    `;
+  }
+
+  // Nút xem trực tiếp
+  const btnStory = document.getElementById('success-btn-view-story');
+  btnStory.href = story.url || data.redirect_url || '#';
+
+  const btnWiki = document.getElementById('success-btn-view-wiki');
+  const wikiUrl = person.url || comp.url;
+  if (wikiUrl) {
+    btnWiki.href = wikiUrl;
+    btnWiki.style.display = 'inline-flex';
+  } else {
+    btnWiki.style.display = 'none';
+  }
+}
+
+function renderCrawledResult(data, article) {
+  // 1. Nguồn
+  document.getElementById('res-source-title').textContent = article.title || data.source?.title || 'Bài viết báo chí';
+  document.getElementById('res-source-publisher').textContent = article.publisher || data.source?.publisher || 'Báo chí';
+  document.getElementById('res-source-date').textContent = article.published_on || data.source?.published_on || '';
+  document.getElementById('res-source-words').textContent = article.word_count || '';
+  document.getElementById('res-source-snippet').textContent = article.snippet || '';
+
+  const linkA = document.getElementById('res-source-link');
+  if (article.url) {
+    linkA.href = article.url;
+    linkA.style.display = 'inline-block';
+  } else {
+    linkA.style.display = 'none';
+  }
+
+  // 1.1 Ảnh đại diện
+  const imgWrap = document.getElementById('res-source-img-wrap');
+  const imgElem = document.getElementById('res-source-img');
+  const formImgInput = document.getElementById('form-image-url');
+  if (article.image_url) {
+    imgElem.src = article.image_url;
+    imgWrap.style.display = 'flex';
+    formImgInput.value = article.image_url;
+  } else {
+    imgWrap.style.display = 'none';
+    formImgInput.value = '';
+  }
+
+  // Ghi hidden vào form lưu
+  document.getElementById('form-source-url').value = article.url || '';
+  document.getElementById('form-source-title').value = article.title || data.source?.title || '';
+  document.getElementById('form-source-publisher').value = article.publisher || data.source?.publisher || '';
+
+  // 1.2 Story
+  const st = data.story || {};
+  document.getElementById('story_title').value = st.title || article.title || '';
+  if (st.story_type) document.getElementById('story_type').value = st.story_type;
+  document.getElementById('story_summary').value = st.summary || '';
+  document.getElementById('story_content_md').value = st.content_md || '';
+
+  // 2. Điền Doanh nhân
+  const p = data.person || {};
+  document.getElementById('cb-save-person').checked = Boolean(data.has_person && p.full_name);
+  togglePersonSection(document.getElementById('cb-save-person').checked);
+
+  document.getElementById('person_full_name').value = p.full_name || '';
+  document.getElementById('person_headline').value = p.headline || '';
+  document.getElementById('person_birth_year').value = p.birth_year || '';
+  document.getElementById('person_hometown_id').value = p.hometown_id || '';
+  document.getElementById('person_current_province_id').value = p.current_province_id || '';
+  document.getElementById('person_summary').value = p.summary || '';
+  document.getElementById('person_biography').value = p.biography || '';
+  document.getElementById('person_journey').value = p.journey || '';
+  document.getElementById('person_philosophy').value = p.philosophy || '';
+
+  // Dấu mốc
+  const msContainer = document.getElementById('milestones-container');
+  msContainer.innerHTML = '';
+  if (Array.isArray(p.milestones) && p.milestones.length > 0) {
+    p.milestones.forEach(m => addMilestoneRow(m.year, m.title, m.kind));
+  } else {
+    addMilestoneRow('', '', 'other');
+  }
+
+  // 3. Điền Doanh nghiệp
+  const c = data.company || {};
+  document.getElementById('cb-save-company').checked = Boolean(data.has_company && (c.legal_name || c.brand_name));
+  toggleCompanySection(document.getElementById('cb-save-company').checked);
+
+  document.getElementById('company_legal_name').value = c.legal_name || '';
+  document.getElementById('company_brand_name').value = c.brand_name || '';
+  document.getElementById('company_tax_code').value = c.tax_code || '';
+  document.getElementById('company_founded_year').value = c.founded_year || '';
+  document.getElementById('company_province_id').value = c.province_id || '';
+  document.getElementById('company_primary_sector_id').value = c.primary_sector_id || '';
+  document.getElementById('company_size_band').value = c.size_band || '';
+  document.getElementById('company_website').value = c.website || '';
+  document.getElementById('company_address').value = c.address || '';
+  document.getElementById('company_overview').value = c.overview || '';
+
+  // 4. Quan hệ
+  const rel = data.relationship || {};
+  if (rel.role) {
+    document.getElementById('relationship_role').value = rel.role;
+  }
+  document.getElementById('relationship_title').value = rel.title || p.headline || '';
+  document.getElementById('relationship_start_year').value = rel.start_year || c.founded_year || '';
+
+  // 5. Cảnh báo trùng lặp
+  const dupBox = document.getElementById('dup-warning-box');
+  dupBox.innerHTML = '';
+  let hasDup = false;
+
+  if (data.duplicates?.person) {
+    hasDup = true;
+    const dp = data.duplicates.person;
+    dupBox.innerHTML += `
+      <div class="dup-badge">
+        <span>⚠️ <b>Phát hiện Doanh nhân trùng tên trong hệ thống:</b> ${dp.name} (#${dp.id})</span>
+        <a href="${dp.url}" target="_blank" class="btn btn-sm btn-outline">Xem hồ sơ hiện có ↗</a>
+      </div>
+    `;
+  }
+  if (data.duplicates?.company) {
+    hasDup = true;
+    const dc = data.duplicates.company;
+    dupBox.innerHTML += `
+      <div class="dup-badge">
+        <span>⚠️ <b>Phát hiện Doanh nghiệp đã có trong hệ thống:</b> ${dc.name} ${dc.tax_code ? '(MST: ' + dc.tax_code + ')' : ''}</span>
+        <a href="${dc.url}" target="_blank" class="btn btn-sm btn-outline">Xem hồ sơ hiện có ↗</a>
+      </div>
+    `;
+  }
+  dupBox.style.display = hasDup ? 'block' : 'none';
+}
+
+function togglePersonSection(checked) {
+  const el = document.getElementById('person-fields-wrapper');
+  if (el) el.style.opacity = checked ? '1' : '0.4';
+}
+
+function toggleCompanySection(checked) {
+  const el = document.getElementById('company-fields-wrapper');
+  if (el) el.style.opacity = checked ? '1' : '0.4';
+}
+
+function addMilestoneRow(year, title, kind) {
+  const container = document.getElementById('milestones-container');
+  const row = document.createElement('div');
+  row.className = 'milestone-item row';
+  row.style.gap = '8px';
+  row.style.alignItems = 'center';
+  row.innerHTML = `
+    <input type="number" name="milestone_year" value="${year || ''}" placeholder="Năm" class="input" style="width:90px">
+    <input type="text" name="milestone_title" value="${title || ''}" placeholder="Chi tiết dấu mốc sự kiện..." class="input grow">
+    <select name="milestone_kind" class="select" style="width:130px">
+      <option value="founding" ${kind === 'founding' ? 'selected' : ''}>Thành lập</option>
+      <option value="award" ${kind === 'award' ? 'selected' : ''}>Giải thưởng</option>
+      <option value="turning_point" ${kind === 'turning_point' ? 'selected' : ''}>Bước ngoặt</option>
+      <option value="other" ${kind === 'other' ? 'selected' : ''}>Khác</option>
+    </select>
+    <button type="button" class="btn btn-sm btn-outline" style="padding:4px 8px;color:#ef4444" onclick="this.closest('.milestone-item').remove()">✕</button>
+  `;
+  container.appendChild(row);
+}
+</script>
+{% endblock %}

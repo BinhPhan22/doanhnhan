@@ -1,0 +1,640 @@
+openapi: 3.1.0
+info:
+  title: doanhnhan.wiki API
+  version: 1.0.0
+  summary: API đọc dữ liệu công khai của doanhnhan.wiki
+  description: |
+    API v1 chỉ **đọc** dữ liệu đã công bố: doanh nhân, doanh nghiệp, ngành nghề (kèm mã VSIC 2025 cấp 2),
+    hiệp hội, sự kiện, video (chỉ link nhúng), tỉnh/thành.
+
+    **Quy ước chung**
+    - Chỉ phương thức `GET` (và `OPTIONS` cho CORS). Không cần khóa. CORS mở cho mọi nguồn.
+    - JSON UTF-8, thời gian theo ISO 8601 (UTC), năm là số nguyên.
+    - Định danh công khai là `slug` (chuỗi trong đường dẫn trang), không dùng id số.
+    - Phân trang: `page` (từ 1), `page_size` (1–100, mặc định 20). Danh sách trả `count`, `num_pages`, `next`, `previous`, `results`.
+    - Giới hạn: mặc định 120 yêu cầu/phút/IP (biến môi trường `API_RATE_LIMIT_PER_MIN`); vượt → `429` + `Retry-After: 60`.
+    - Bộ nhớ đệm: `Cache-Control: public, max-age=300`.
+    - Lỗi: `{"error": {"code": "...", "message": "..."}}` với `code` ∈ `invalid_parameter` (400), `not_found` (404),
+      `method_not_allowed` (405), `rate_limited` (429).
+    - Tìm kiếm `q` không phân biệt dấu và hoa/thường (“nguyen van dat” khớp “Nguyễn Văn Đạt”).
+
+    **Quyền riêng tư**: chỉ trả dữ liệu đã công bố; `birth_year`, `hometown`, `email` là `null` nếu chủ hồ sơ không công khai.
+    Không bao giờ trả tài khoản người dùng, giấy tờ xác minh, yêu cầu liên hệ hay bản nháp.
+
+    Bản ghi có `is_demo: true` là dữ liệu mẫu hư cấu.
+  contact:
+    name: Ban vận hành doanhnhan.wiki
+    url: https://doanhnhan.wiki/lien-he/gop-y/
+servers:
+  - url: https://doanhnhan.wiki/api/v1
+  - url: http://localhost:8000/api/v1
+tags:
+  - name: Danh mục
+  - name: Doanh nhân
+  - name: Doanh nghiệp
+  - name: Hiệp hội
+  - name: Sự kiện
+  - name: Video
+  - name: Tìm kiếm
+
+paths:
+  /:
+    get:
+      tags: [Danh mục]
+      summary: Thông tin API và danh sách endpoint
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name: {type: string}
+                  version: {type: string, example: 1.0.0}
+                  documentation: {type: string, format: uri}
+                  endpoints: {type: object, additionalProperties: {type: string, format: uri}}
+  /openapi.yaml:
+    get:
+      tags: [Danh mục]
+      summary: Tài liệu này (OpenAPI 3.1, YAML)
+      responses:
+        "200": {description: OK, content: {application/yaml: {}}}
+  /provinces/:
+    get:
+      tags: [Danh mục]
+      summary: 34 tỉnh/thành (sắp xếp đơn vị hành chính từ 12/6/2025)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count: {type: integer, example: 34}
+                  results:
+                    type: array
+                    items: {$ref: "#/components/schemas/Province"}
+  /sectors/:
+    get:
+      tags: [Danh mục]
+      summary: Cây ngành nghề (ngành cấp 1 kèm phân ngành)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count: {type: integer}
+                  results:
+                    type: array
+                    items: {$ref: "#/components/schemas/Sector"}
+  /sectors/{slug}/:
+    get:
+      tags: [Danh mục]
+      summary: Chi tiết một ngành / phân ngành
+      parameters: [{$ref: "#/components/parameters/Slug"}]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Sector"
+                  - type: object
+                    properties:
+                      person_count: {type: integer}
+                      persons_api_url: {type: string, format: uri}
+                      companies_api_url: {type: string, format: uri}
+        "404": {$ref: "#/components/responses/NotFound"}
+
+  /persons/:
+    get:
+      tags: [Doanh nhân]
+      summary: Danh sách doanh nhân đã công bố
+      parameters:
+        - {$ref: "#/components/parameters/Q"}
+        - {name: sector, in: query, description: "slug ngành; ngành cấp 1 gồm cả phân ngành", schema: {type: string}, example: cong-nghe-phan-mem}
+        - {name: province, in: query, description: mã tỉnh/thành nơi hoạt động, schema: {type: string}, example: tp-ho-chi-minh}
+        - {name: verified, in: query, description: "1 = chỉ hồ sơ đã xác minh (bất kỳ mức nào)", schema: {type: string, enum: ["1", "true"]}}
+        - {name: featured, in: query, schema: {type: string, enum: ["1", "true"]}}
+        - {name: ordering, in: query, schema: {type: string, enum: ["-updated", updated, name, newest], default: "-updated"}}
+        - {$ref: "#/components/parameters/Page"}
+        - {$ref: "#/components/parameters/PageSize"}
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Page"
+                  - type: object
+                    properties:
+                      results: {type: array, items: {$ref: "#/components/schemas/PersonSummary"}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+  /persons/{slug}/:
+    get:
+      tags: [Doanh nhân]
+      summary: Hồ sơ doanh nhân đầy đủ (bài viết, dấu mốc, nguồn, doanh nghiệp, hiệp hội, sự kiện, video)
+      parameters: [{$ref: "#/components/parameters/Slug"}]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/PersonDetail"}
+        "404": {$ref: "#/components/responses/NotFound"}
+
+  /companies/:
+    get:
+      tags: [Doanh nghiệp]
+      summary: Danh sách doanh nghiệp đã công bố
+      parameters:
+        - {$ref: "#/components/parameters/Q"}
+        - {name: sector, in: query, schema: {type: string}}
+        - {name: province, in: query, description: mã tỉnh/thành trụ sở, schema: {type: string}}
+        - {name: size, in: query, description: "một hoặc nhiều, cách nhau dấu phẩy", schema: {type: string}, example: "10_50,50_200"}
+        - {name: founded_from, in: query, schema: {type: integer, minimum: 1900}}
+        - {name: founded_to, in: query, schema: {type: integer, maximum: 2100}}
+        - {name: tax_code, in: query, description: tra đúng mã số thuế, schema: {type: string}, example: "0312345678"}
+        - {name: verified, in: query, schema: {type: string, enum: ["1", "true"]}}
+        - {name: ordering, in: query, schema: {type: string, enum: ["-updated", name, founded, "-founded"], default: "-updated"}}
+        - {$ref: "#/components/parameters/Page"}
+        - {$ref: "#/components/parameters/PageSize"}
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Page"
+                  - type: object
+                    properties:
+                      results: {type: array, items: {$ref: "#/components/schemas/CompanySummary"}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+  /companies/{slug}/:
+    get:
+      tags: [Doanh nghiệp]
+      summary: Trang doanh nghiệp đầy đủ
+      parameters: [{$ref: "#/components/parameters/Slug"}]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CompanyDetail"}
+        "404": {$ref: "#/components/responses/NotFound"}
+
+  /associations/:
+    get:
+      tags: [Hiệp hội]
+      summary: Danh sách hiệp hội, chi hội, CLB
+      parameters:
+        - {$ref: "#/components/parameters/Q"}
+        - {name: level, in: query, schema: {type: string, enum: [national, provincial, branch, club]}}
+        - {$ref: "#/components/parameters/Page"}
+        - {$ref: "#/components/parameters/PageSize"}
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Page"
+                  - type: object
+                    properties:
+                      results: {type: array, items: {$ref: "#/components/schemas/Association"}}
+  /associations/{slug}/:
+    get:
+      tags: [Hiệp hội]
+      summary: Chi tiết hiệp hội kèm hội viên đã xác nhận (tối đa 500), chi hội, sự kiện
+      parameters: [{$ref: "#/components/parameters/Slug"}]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AssociationDetail"}
+        "404": {$ref: "#/components/responses/NotFound"}
+
+  /events/:
+    get:
+      tags: [Sự kiện]
+      summary: Danh sách sự kiện
+      parameters:
+        - {name: when, in: query, description: "upcoming (sắp diễn ra, tăng dần) | past (đã diễn ra, giảm dần); bỏ trống = mới nhất trước", schema: {type: string, enum: [upcoming, past]}}
+        - {name: kind, in: query, schema: {type: string, enum: [conference, b2b, award, training, gala, other]}}
+        - {name: association, in: query, description: slug hiệp hội tổ chức, schema: {type: string}}
+        - {$ref: "#/components/parameters/Q"}
+        - {$ref: "#/components/parameters/Page"}
+        - {$ref: "#/components/parameters/PageSize"}
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Page"
+                  - type: object
+                    properties:
+                      results: {type: array, items: {$ref: "#/components/schemas/Event"}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+  /events/{slug}/:
+    get:
+      tags: [Sự kiện]
+      summary: Chi tiết sự kiện kèm người tham dự và video
+      parameters: [{$ref: "#/components/parameters/Slug"}]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/EventDetail"}
+        "404": {$ref: "#/components/responses/NotFound"}
+
+  /videos/:
+    get:
+      tags: [Video]
+      summary: Video đang hiển thị (link còn xem được). Hệ thống không lưu tệp video.
+      parameters:
+        - {name: kind, in: query, schema: {type: string, enum: [interview, company, event, talk]}}
+        - {name: platform, in: query, schema: {type: string, enum: [youtube, vimeo, facebook, tiktok, other]}}
+        - {name: person, in: query, description: slug doanh nhân, schema: {type: string}}
+        - {name: company, in: query, description: slug doanh nghiệp, schema: {type: string}}
+        - {name: event, in: query, description: slug sự kiện, schema: {type: string}}
+        - {$ref: "#/components/parameters/Q"}
+        - {$ref: "#/components/parameters/Page"}
+        - {$ref: "#/components/parameters/PageSize"}
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Page"
+                  - type: object
+                    properties:
+                      results: {type: array, items: {$ref: "#/components/schemas/Video"}}
+
+  /search/:
+    get:
+      tags: [Tìm kiếm]
+      summary: Tìm chung trên mọi loại dữ liệu
+      parameters:
+        - {name: q, in: query, required: true, schema: {type: string, minLength: 2}, example: an phat}
+        - {name: limit, in: query, description: số kết quả mỗi nhóm, schema: {type: integer, minimum: 1, maximum: 50, default: 10}}
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  query: {type: string}
+                  persons: {type: array, items: {$ref: "#/components/schemas/PersonSummary"}}
+                  companies: {type: array, items: {$ref: "#/components/schemas/CompanySummary"}}
+                  associations: {type: array, items: {$ref: "#/components/schemas/Association"}}
+                  events: {type: array, items: {$ref: "#/components/schemas/Event"}}
+                  sectors: {type: array, items: {$ref: "#/components/schemas/Sector"}}
+        "400": {$ref: "#/components/responses/BadRequest"}
+
+components:
+  parameters:
+    Slug: {name: slug, in: path, required: true, schema: {type: string}, example: nguyen-minh-an-ho-so-mau}
+    Q: {name: q, in: query, description: "từ khóa, không phân biệt dấu", schema: {type: string}}
+    Page: {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+    PageSize: {name: page_size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+  responses:
+    BadRequest:
+      description: Tham số không hợp lệ
+      content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+    NotFound:
+      description: Không tìm thấy hoặc chưa công bố
+      content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+    RateLimited:
+      description: Vượt giới hạn tần suất
+      content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: {type: string, enum: [invalid_parameter, not_found, method_not_allowed, rate_limited]}
+            message: {type: string}
+    Page:
+      type: object
+      properties:
+        count: {type: integer}
+        page: {type: integer}
+        page_size: {type: integer}
+        num_pages: {type: integer}
+        next: {type: [string, "null"], format: uri}
+        previous: {type: [string, "null"], format: uri}
+    Province:
+      type: object
+      properties:
+        code: {type: string, example: tp-ho-chi-minh}
+        name: {type: string, example: TP. Hồ Chí Minh}
+        is_city: {type: boolean}
+        merged_from: {type: [string, "null"], example: "TP. Hồ Chí Minh, Bà Rịa – Vũng Tàu, Bình Dương"}
+    ProvinceRef:
+      type: [object, "null"]
+      properties:
+        code: {type: string}
+        name: {type: string}
+    SectorRef:
+      type: [object, "null"]
+      properties:
+        slug: {type: string, example: fintech}
+        name: {type: string, example: Fintech}
+        parent: {type: [string, "null"], description: slug ngành cấp 1, example: cong-nghe-phan-mem}
+        vsic_code: {type: [string, "null"], description: "mã ngành cấp 2 theo VSIC 2025 (QĐ 36/2025/QĐ-TTg), tham chiếu", example: "66"}
+    Sector:
+      allOf:
+        - $ref: "#/components/schemas/SectorRef"
+        - type: object
+          properties:
+            description: {type: [string, "null"]}
+            icon: {type: string}
+            company_count: {type: integer}
+            url: {type: string, format: uri}
+            children: {type: array, items: {$ref: "#/components/schemas/SectorRef"}}
+    PersonRef:
+      type: object
+      properties:
+        slug: {type: string}
+        full_name: {type: string}
+        headline: {type: string}
+        url: {type: string, format: uri, description: trang web công khai}
+        api_url: {type: string, format: uri}
+    CompanyRef:
+      type: object
+      description: slug/url/api_url là null khi trang doanh nghiệp chưa công bố
+      properties:
+        slug: {type: [string, "null"]}
+        name: {type: string}
+        legal_name: {type: string}
+        url: {type: [string, "null"], format: uri}
+        api_url: {type: [string, "null"], format: uri}
+    AssociationRef:
+      type: object
+      properties:
+        slug: {type: string}
+        name: {type: string}
+        short_name: {type: [string, "null"]}
+        url: {type: string, format: uri}
+    EventRef:
+      type: object
+      properties:
+        slug: {type: string}
+        title: {type: string}
+        starts_at: {type: string, format: date-time}
+        url: {type: string, format: uri}
+    Verification: {type: string, enum: [none, basic, verified, association], description: "none = chưa xác minh; basic = kiểm tra cơ bản; verified = đã xác minh; association = hiệp hội xác nhận"}
+    Section:
+      type: object
+      properties:
+        key: {type: string, enum: [summary, biography, journey, achievements, philosophy, community, overview, history, products, market, culture]}
+        title: {type: string, example: Hành trình khởi nghiệp & sự nghiệp}
+        word_count: {type: integer}
+        body_markdown: {type: string, description: "markdown; chú thích nguồn dạng [^n] trỏ tới sources[number=n]"}
+        body_html: {type: string, description: HTML đã lọc an toàn}
+    Milestone:
+      type: object
+      properties:
+        year: {type: integer}
+        kind: {type: string, enum: [founding, funding, product, award, position, community, other]}
+        title: {type: string}
+        source_url: {type: [string, "null"], format: uri}
+    Source:
+      type: object
+      properties:
+        number: {type: integer}
+        title: {type: string}
+        url: {type: [string, "null"], format: uri}
+        kind: {type: string, enum: [press, registry, decision, association, self]}
+    Revision:
+      type: [object, "null"]
+      properties:
+        number: {type: integer, description: số phiên bản đã duyệt}
+        approved_at: {type: string, format: date-time}
+    PersonSummary:
+      allOf:
+        - $ref: "#/components/schemas/PersonRef"
+        - type: object
+          properties:
+            is_demo: {type: boolean}
+            verification: {$ref: "#/components/schemas/Verification"}
+            portrait_url: {type: [string, "null"], format: uri}
+            summary: {type: [string, "null"], description: đoạn tóm tắt dạng văn bản thường, tối đa 300 ký tự}
+            province: {$ref: "#/components/schemas/ProvinceRef"}
+            primary_company:
+              oneOf:
+                - type: "null"
+                - allOf:
+                    - $ref: "#/components/schemas/CompanyRef"
+                    - type: object
+                      properties:
+                        role: {type: string, enum: [founder_ceo, founder, cofounder, ceo, executive, shareholder]}
+                        title: {type: string}
+            sector: {$ref: "#/components/schemas/SectorRef"}
+            is_featured: {type: boolean}
+            published_at: {type: [string, "null"], format: date-time}
+            updated_at: {type: string, format: date-time}
+    PersonDetail:
+      allOf:
+        - $ref: "#/components/schemas/PersonSummary"
+        - type: object
+          properties:
+            birth_year: {type: [integer, "null"], description: null nếu không công khai}
+            hometown: {$ref: "#/components/schemas/ProvinceRef"}
+            email: {type: [string, "null"], description: null nếu không công khai}
+            website: {type: [string, "null"], format: uri}
+            verification_note: {type: [string, "null"]}
+            verified_at: {type: [string, "null"], format: date}
+            has_owner: {type: boolean, description: hồ sơ đã có chính chủ quản lý}
+            companies:
+              type: array
+              items:
+                allOf:
+                  - $ref: "#/components/schemas/CompanyRef"
+                  - type: object
+                    properties:
+                      role: {type: string}
+                      title: {type: string}
+                      start_year: {type: [integer, "null"]}
+                      end_year: {type: [integer, "null"]}
+                      is_primary: {type: boolean}
+            sections: {type: array, items: {$ref: "#/components/schemas/Section"}}
+            milestones: {type: array, items: {$ref: "#/components/schemas/Milestone"}}
+            sources: {type: array, items: {$ref: "#/components/schemas/Source"}}
+            memberships:
+              type: array
+              items:
+                allOf:
+                  - $ref: "#/components/schemas/AssociationRef"
+                  - type: object
+                    properties:
+                      position: {type: string}
+                      is_leadership: {type: boolean}
+                      start_year: {type: [integer, "null"]}
+            events:
+              type: array
+              items:
+                allOf:
+                  - $ref: "#/components/schemas/EventRef"
+                  - type: object
+                    properties:
+                      role: {type: string, enum: [speaker, sponsor, awardee, organizer, attendee]}
+                      note: {type: [string, "null"]}
+            videos: {type: array, items: {$ref: "#/components/schemas/Video"}}
+            revision: {$ref: "#/components/schemas/Revision"}
+    CompanySummary:
+      allOf:
+        - $ref: "#/components/schemas/CompanyRef"
+        - type: object
+          properties:
+            is_demo: {type: boolean}
+            brand_name: {type: [string, "null"]}
+            tax_code: {type: [string, "null"], example: "0312345678"}
+            founded_year: {type: [integer, "null"]}
+            province: {$ref: "#/components/schemas/ProvinceRef"}
+            size_band: {type: [string, "null"], enum: [lt10, "10_50", "50_200", gt200, null]}
+            primary_sector: {$ref: "#/components/schemas/SectorRef"}
+            verification: {$ref: "#/components/schemas/Verification"}
+            logo_url: {type: [string, "null"], format: uri}
+            summary: {type: [string, "null"]}
+            leaders:
+              type: array
+              items:
+                allOf:
+                  - $ref: "#/components/schemas/PersonRef"
+                  - type: object
+                    properties:
+                      role: {type: string}
+                      title: {type: string}
+            updated_at: {type: string, format: date-time}
+    CompanyDetail:
+      allOf:
+        - $ref: "#/components/schemas/CompanySummary"
+        - type: object
+          properties:
+            address: {type: [string, "null"]}
+            website: {type: [string, "null"], format: uri}
+            cover_url: {type: [string, "null"], format: uri}
+            sectors: {type: array, items: {$ref: "#/components/schemas/SectorRef"}}
+            verification_note: {type: [string, "null"]}
+            verified_at: {type: [string, "null"], format: date}
+            sections: {type: array, items: {$ref: "#/components/schemas/Section"}}
+            products:
+              type: array
+              items:
+                type: object
+                properties:
+                  name: {type: string}
+                  description: {type: [string, "null"]}
+            milestones: {type: array, items: {$ref: "#/components/schemas/Milestone"}}
+            sources: {type: array, items: {$ref: "#/components/schemas/Source"}}
+            videos: {type: array, items: {$ref: "#/components/schemas/Video"}}
+            revision: {$ref: "#/components/schemas/Revision"}
+    Association:
+      allOf:
+        - $ref: "#/components/schemas/AssociationRef"
+        - type: object
+          properties:
+            level: {type: string, enum: [national, provincial, branch, club]}
+            province: {$ref: "#/components/schemas/ProvinceRef"}
+            parent: {oneOf: [{type: "null"}, {$ref: "#/components/schemas/AssociationRef"}]}
+            is_partner: {type: boolean, description: hiệp hội đối tác đã xác minh}
+            member_count: {type: integer}
+            logo_url: {type: [string, "null"], format: uri}
+            website: {type: [string, "null"], format: uri}
+            api_url: {type: string, format: uri}
+    AssociationDetail:
+      allOf:
+        - $ref: "#/components/schemas/Association"
+        - type: object
+          properties:
+            description_markdown: {type: [string, "null"]}
+            description_html: {type: [string, "null"]}
+            partner_since: {type: [string, "null"], format: date}
+            sectors: {type: array, items: {$ref: "#/components/schemas/SectorRef"}}
+            members:
+              type: array
+              items:
+                allOf:
+                  - $ref: "#/components/schemas/PersonRef"
+                  - type: object
+                    properties:
+                      position: {type: string}
+                      is_leadership: {type: boolean}
+                      start_year: {type: [integer, "null"]}
+            children: {type: array, items: {$ref: "#/components/schemas/AssociationRef"}}
+            events: {type: array, items: {$ref: "#/components/schemas/EventRef"}}
+    Event:
+      allOf:
+        - $ref: "#/components/schemas/EventRef"
+        - type: object
+          properties:
+            kind: {type: string, enum: [conference, b2b, award, training, gala, other]}
+            status: {type: string, enum: [published, cancelled]}
+            ends_at: {type: [string, "null"], format: date-time}
+            venue: {type: [string, "null"]}
+            is_online: {type: boolean}
+            province: {$ref: "#/components/schemas/ProvinceRef"}
+            organizer:
+              description: hiệp hội trong hệ thống, hoặc chỉ tên đơn vị khác
+              anyOf:
+                - type: "null"
+                - $ref: "#/components/schemas/AssociationRef"
+                - {type: object, required: [name], properties: {name: {type: string}}}
+            registration_url: {type: [string, "null"], format: uri}
+            participant_count: {type: integer}
+            is_featured: {type: boolean}
+            api_url: {type: string, format: uri}
+    EventDetail:
+      allOf:
+        - $ref: "#/components/schemas/Event"
+        - type: object
+          properties:
+            description_markdown: {type: [string, "null"]}
+            description_html: {type: [string, "null"]}
+            sectors: {type: array, items: {$ref: "#/components/schemas/SectorRef"}}
+            participants:
+              type: array
+              items:
+                allOf:
+                  - $ref: "#/components/schemas/PersonRef"
+                  - type: object
+                    properties:
+                      role: {type: string, enum: [speaker, sponsor, awardee, organizer, attendee]}
+                      note: {type: [string, "null"]}
+            videos: {type: array, items: {$ref: "#/components/schemas/Video"}}
+    Video:
+      type: object
+      properties:
+        id: {type: integer}
+        title: {type: string}
+        kind: {type: string, enum: [interview, company, event, talk]}
+        platform: {type: string, enum: [youtube, vimeo, facebook, tiktok, other]}
+        url: {type: string, format: uri, description: link gốc trên nền tảng}
+        embeddable: {type: boolean, description: "false = chỉ mở link gốc, không nhúng"}
+        thumbnail_url: {type: [string, "null"], format: uri}
+        duration_seconds: {type: [integer, "null"]}
+        channel_name: {type: [string, "null"]}
+        published_on: {type: [string, "null"], format: date}
+        persons: {type: array, items: {$ref: "#/components/schemas/PersonRef"}}
+        companies: {type: array, items: {$ref: "#/components/schemas/CompanyRef"}}
+        events: {type: array, items: {$ref: "#/components/schemas/EventRef"}}

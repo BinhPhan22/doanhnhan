@@ -1,0 +1,53 @@
+{% load static %}<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>{% block title %}Quản trị{% endblock %} – doanhnhan.wiki</title>
+<link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Noto+Serif:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/styles.css' %}?v=2.1"><link rel="stylesheet" href="{% static 'css/app.css' %}?v=2.1">
+</head>
+<body>
+<div class="admin">
+  {% with p=request.path %}
+  <nav class="admin-nav" aria-label="Menu quản trị">
+    <a class="logo" href="{% url 'public:home' %}">doanhnhan<span>.wiki</span></a>
+    <div class="logo-sub">Bảng quản trị · {{ user.get_role_display }}</div>
+    <a href="{% url 'staff:dashboard' %}"{% if p == "/quan-tri/" or "/quan-tri/duyet/" in p %} aria-current="page"{% endif %}>Hàng chờ duyệt {% if staff_counts.revisions %}<span class="count">{{ staff_counts.revisions }}</span>{% endif %}</a>
+    <a href="{% url 'staff:accounts' %}"{% if "/quan-tri/tai-khoan/" in p %} aria-current="page"{% endif %}>Duyệt tài khoản {% if staff_counts.accounts %}<span class="count">{{ staff_counts.accounts }}</span>{% endif %}</a>
+    <a href="{% url 'staff:claims' %}"{% if "/quan-tri/nhan-ho-so/" in p %} aria-current="page"{% endif %}>Nhận quản lý hồ sơ {% if staff_counts.claims %}<span class="count">{{ staff_counts.claims }}</span>{% endif %}</a>
+    <a href="{% url 'staff:interviews' %}"{% if "/quan-tri/phong-van/" in p %} aria-current="page"{% endif %}>Yêu cầu phỏng vấn {% if staff_counts.interviews %}<span class="count">{{ staff_counts.interviews }}</span>{% endif %}</a>
+    <a href="{% url 'staff:contacts' %}"{% if "/quan-tri/lien-he/" in p %} aria-current="page"{% endif %}>Liên hệ, góp ý</a>
+    <div class="logo-sub" style="padding-top:14px;padding-bottom:4px">Nhập liệu &amp; AI</div>
+    <a href="{% url 'staff:ai_crawler' %}"{% if "/quan-tri/ai-crawler/" in p %} aria-current="page"{% endif %} style="color:var(--gold-light);font-weight:600">✨ Cào dữ liệu AI</a>
+    <a href="{% url 'staff:person_list' %}"{% if "/quan-tri/doanh-nhan/" in p %} aria-current="page"{% endif %}>Hồ sơ doanh nhân</a>
+    <a href="{% url 'staff:company_list' %}"{% if "/quan-tri/doanh-nghiep/" in p %} aria-current="page"{% endif %}>Doanh nghiệp</a>
+    <a href="{% url 'staff:story_list' %}"{% if "/quan-tri/story/" in p %} aria-current="page"{% endif %}>Câu chuyện (Story)</a>
+    <a href="{% url 'staff:podcast_list' %}"{% if "/quan-tri/podcast/" in p %} aria-current="page"{% endif %}>Podcast doanh nhân</a>
+    <a href="{% url 'staff:sector_list' %}"{% if "/quan-tri/nganh-nghe/" in p %} aria-current="page"{% endif %}>Danh mục ngành nghề</a>
+    <a href="{% url 'staff:association_list' %}"{% if "/quan-tri/hiep-hoi/" in p %} aria-current="page"{% endif %}>Hiệp hội &amp; hội viên</a>
+    <a href="{% url 'staff:event_list' %}"{% if "/quan-tri/su-kien/" in p %} aria-current="page"{% endif %}>Sự kiện</a>
+    <a href="{% url 'staff:video_list' %}"{% if "/quan-tri/video/" in p %} aria-current="page"{% endif %}>Video</a>
+    <a href="{% url 'staff:award_list' %}"{% if "/quan-tri/danh-hieu/" in p %} aria-current="page"{% endif %}>Danh hiệu &amp; giải thưởng</a>
+    {% if user.is_admin_role %}<div class="logo-sub" style="padding-top:14px;padding-bottom:4px">Quản trị viên</div>
+    <a href="{% url 'staff:donation' %}"{% if "/quan-tri/tai-tro/" in p %} aria-current="page"{% endif %}>Trang tài trợ</a>
+    <a href="{% url 'staff:policies' %}"{% if "/quan-tri/chinh-sach/" in p %} aria-current="page"{% endif %}>Chính sách &amp; điều khoản</a>
+    <a href="{% url 'staff:users' %}"{% if "/quan-tri/nguoi-dung/" in p %} aria-current="page"{% endif %}>Người dùng &amp; vai trò</a>
+    <a href="{% url 'staff:data_requests' %}"{% if "/quan-tri/yeu-cau-du-lieu/" in p %} aria-current="page"{% endif %}>Yêu cầu dữ liệu cá nhân</a>
+    <a href="{% url 'staff:audit_log' %}"{% if "/quan-tri/nhat-ky/" in p %} aria-current="page"{% endif %}>Nhật ký hệ thống</a>
+    <a href="{% url 'staff:site_settings' %}"{% if "/quan-tri/cai-dat/" in p %} aria-current="page"{% endif %}>Cài đặt chung</a>{% endif %}
+    <a href="{% url 'public:home' %}" style="margin-top:16px;border-top:1px solid #22344F;border-radius:0;padding-top:16px">← Về trang công khai</a>
+    <form method="post" action="{% url 'accounts:logout' %}" style="padding:0 12px">{% csrf_token %}<button type="submit" class="linklike" style="color:#9AA7B2">Đăng xuất ({{ user.email }})</button></form>
+  </nav>
+  {% endwith %}
+  <main class="admin-main">
+    {% if messages %}<div class="flash-wrap" style="padding:0 0 16px">{% for m in messages %}<div class="flash flash-{{ m.tags }}">{{ m }}</div>{% endfor %}</div>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% include "partials/ai_assistant.html" %}
+<script src="{% static 'js/main.js' %}?v=2.0"></script>
+</body>
+</html>

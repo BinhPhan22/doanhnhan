@@ -1,0 +1,19 @@
+{% extends "staff/base.html" %}
+{% block title %}Doanh nghiệp{% endblock %}
+{% block content %}
+<div class="row between"><h1 class="admin-title">Doanh nghiệp</h1><a class="btn btn-dark" href="{% url 'staff:company_new' %}">+ Nhập doanh nghiệp mới</a></div>
+<div style="margin-top:20px">{% include "staff/_search.html" with placeholder="Tên, mã số thuế…" %}</div>
+<div class="card" style="padding:0"><div class="table-wrap"><table class="table admin-table">
+  <thead><tr><th>Doanh nghiệp</th><th>MST</th><th>Ngành</th><th>Tỉnh</th><th>Trạng thái</th><th>Xác minh</th><th></th></tr></thead>
+  <tbody>{% for c in page %}<tr><td><b>{{ c.display_name }}</b>{% if c.is_demo %} <span class="demo-badge">Mẫu</span>{% endif %}<span class="small muted">{{ c.legal_name|truncatechars:60 }}</span></td>
+    <td>{{ c.tax_code|default:"—" }}</td><td>{{ c.primary_sector.name|default:"—" }}</td><td>{{ c.province.name|default:"—" }}</td>
+    <td><span class="status-pill {{ c.status }}">{{ c.get_status_display }}</span></td><td>{{ c.get_verification_display }}</td>
+    <td style="white-space:nowrap">
+      <a class="btn btn-dark btn-sm" href="{% url 'staff:company_edit' c.pk %}">Sửa</a>
+      <a class="btn btn-outline btn-sm" href="{{ c.get_absolute_url }}" target="_blank">Xem</a>
+      <form method="post" action="{% url 'staff:company_toggle_status' c.pk %}" style="display:inline">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-outline btn-sm" type="submit">{% if c.status == 'archived' %}Bỏ ẩn{% else %}Ẩn{% endif %}</button></form>
+      <form method="post" action="{% url 'staff:company_delete' c.pk %}" style="display:inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn doanh nghiệp {{ c.display_name|escapejs }}?')">{% csrf_token %}<button class="btn btn-danger btn-sm" type="submit">Xóa</button></form>
+    </td></tr>
+  {% empty %}<tr><td colspan="7" class="empty-state">Chưa có doanh nghiệp.</td></tr>{% endfor %}</tbody></table></div></div>
+{% paginate page %}
+{% endblock %}

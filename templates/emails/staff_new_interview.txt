@@ -1,0 +1,8 @@
+Yêu cầu ghi hình, phỏng vấn mới
+{{ obj.full_name }} – {{ obj.title }} – {{ obj.company }}
+Điện thoại: {{ obj.phone }} · Email: {{ obj.email }}
+Nội dung: {{ obj.get_kind_display }} · {{ obj.get_format_display }}
+
+{{ obj.story }}
+
+Xử lý tại: {{ site_url }}/quan-tri/phong-van/{{ obj.pk }}/

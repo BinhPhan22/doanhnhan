@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Doanh nghiệp – doanhnhan.wiki{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <p class="eyebrow">Danh bạ doanh nghiệp</p>
+    <h1>Doanh nghiệp của doanh nhân trẻ</h1>
+    <p class="lead">Mỗi doanh nghiệp được đối chiếu mã số thuế và liên kết với hồ sơ người sáng lập, người điều hành.</p>
+    <form class="search-bar" action="" role="search">
+      <label for="qdn" class="sr-only">Tìm doanh nghiệp</label>
+      <input id="qdn" name="q" type="search" value="{{ q }}" placeholder="Tên công ty, mã số thuế, thương hiệu…">
+      <button type="submit" class="btn btn-gold">Tìm kiếm</button>
+    </form>
+  </div>
+</section>
+<div class="container layout">
+  <aside class="aside" aria-label="Bộ lọc" style="flex:1 1 240px">
+    <form class="card stack" action="">
+      <input type="hidden" name="q" value="{{ q }}">
+      <div style="font-weight:700">Bộ lọc</div>
+      <div class="field"><label for="f-nganh">Lĩnh vực</label>
+        <select id="f-nganh" name="nganh" class="select"><option value="">Tất cả lĩnh vực</option>{% for s in sectors %}<option value="{{ s.slug }}"{% if sector.pk == s.pk %} selected{% endif %}>{{ s.name }}</option>{% endfor %}</select></div>
+      <div class="field"><label for="f-tinh">Tỉnh / thành</label>
+        <select id="f-tinh" name="tinh" class="select"><option value="">Toàn quốc</option>{% for p in provinces %}<option value="{{ p.code }}"{% if province.pk == p.pk %} selected{% endif %}>{{ p.name }}</option>{% endfor %}</select></div>
+      <div class="field"><label for="f-danhhieu">Danh hiệu / Giải thưởng</label>
+        <select id="f-danhhieu" name="danh-hieu" class="select"><option value="">Tất cả danh hiệu</option>{% for b in badges %}<option value="{{ b.code }}"{% if selected_badge.pk == b.pk %} selected{% endif %}>{{ b.name }}</option>{% endfor %}</select></div>
+      <fieldset style="border:0;margin:0;padding:0" class="stack">
+        <legend class="label" style="margin-bottom:8px">Quy mô nhân sự</legend>
+        {% for val, label in size_choices %}<label class="check"><input type="checkbox" name="quy-mo" value="{{ val }}"{% if val in sizes %} checked{% endif %}> {{ label }}</label>{% endfor %}
+      </fieldset>
+      <fieldset style="border:0;margin:0;padding:0">
+        <legend class="label" style="margin-bottom:8px">Năm thành lập</legend>
+        <div class="row" style="flex-wrap:nowrap">
+          <label for="tu" class="sr-only">Từ năm</label><input id="tu" name="tu" class="input" inputmode="numeric" placeholder="Từ" value="{{ year_from }}">
+          <label for="den" class="sr-only">Đến năm</label><input id="den" name="den" class="input" inputmode="numeric" placeholder="Đến" value="{{ year_to }}">
+        </div>
+      </fieldset>
+      <label class="check" style="font-weight:600"><input type="checkbox" name="xac-minh" value="1"{% if request.GET|get:"xac-minh" %} checked{% endif %}> Chỉ doanh nghiệp đã xác minh</label>
+      <input type="hidden" name="sap-xep" value="{{ sort }}">
+      <button class="btn btn-dark" type="submit">Áp dụng bộ lọc</button>
+      <a href="?" class="small">Xóa bộ lọc</a>
+    </form>
+  </aside>
+  <div class="main">
+    <div class="row between" style="margin-bottom:16px">
+      <div style="font-size:14px;color:var(--muted)"><b style="color:var(--ink)">{{ page.paginator.count }}</b> doanh nghiệp phù hợp{% if selected_badge %} · <b>{{ selected_badge.name }}</b>{% endif %}</div>
+      <form action="" class="row" style="font-size:14px;gap:8px">
+        {% for k, v in request.GET.lists %}{% if k != "sap-xep" and k != "trang" %}{% for item in v %}<input type="hidden" name="{{ k }}" value="{{ item }}">{% endfor %}{% endif %}{% endfor %}
+        <label class="row" style="gap:8px">Sắp xếp
+          <select class="select" name="sap-xep" style="width:auto" onchange="this.form.submit()">
+            <option value="cap-nhat"{% if sort == "cap-nhat" %} selected{% endif %}>Mới cập nhật</option>
+            <option value="ten"{% if sort == "ten" %} selected{% endif %}>Tên A–Z</option>
+            <option value="nam"{% if sort == "nam" %} selected{% endif %}>Năm thành lập</option>
+          </select></label>
+      </form>
+    </div>
+    <div class="stack" style="gap:12px">
+      {% for c in page %}<a class="row-card" href="{{ c.get_absolute_url }}">
+        {% if c.logo %}<img class="logo-img" src="{{ c.logo.url }}" alt="">{% else %}<div class="avatar square" aria-hidden="true">{{ c.initials }}</div>{% endif %}
+        <div class="grow"><div style="font-weight:700;font-size:17px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">{{ c.display_name }}{% if c.primary_badge %}<span class="badge-award badge-{{ c.primary_badge.badge.color }}" style="font-size:12px;padding:2px 8px;font-weight:500"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="vertical-align:-1px;margin-right:2px"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>{{ c.primary_badge.title|default:c.primary_badge.badge.name }}</span>{% endif %}{% if c.is_demo %} <span class="demo-badge">Mẫu</span>{% endif %}</div><div class="small muted" style="margin-top:4px">{% if c.tax_code %}MST {{ c.tax_code }} · {% endif %}{{ c.primary_sector.name|default:"" }}{% if c.province %} · {{ c.province.name }}{% endif %}</div>{% for l in c.person_links.all|slice:":2" %}<div style="font-size:14px;margin-top:8px">{{ l.label }}: <span style="color:var(--gold-dark);font-weight:600">{{ l.person.full_name }}</span></div>{% endfor %}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-size:13px">{% if c.verification != "none" %}<span class="chip chip-gold">Đã xác minh</span>{% else %}<span class="chip">Chưa xác minh</span>{% endif %}<span class="muted">{% if c.founded_year %}Thành lập {{ c.founded_year }}{% endif %}{% if c.size_band %} · {{ c.get_size_band_display }}{% endif %}</span></div>
+      </a>{% empty %}<div class="empty-state card">Không tìm thấy doanh nghiệp phù hợp.</div>{% endfor %}
+    </div>
+    {% paginate page %}
+  </div>
+</div>
+{% endblock %}

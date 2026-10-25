@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Liên hệ ghi hình, phỏng vấn – doanhnhan.wiki{% endblock %}
+{% block content %}
+<section class="hero"><div class="container">
+  <p class="eyebrow">Ghi hình &amp; phỏng vấn</p>
+  <h1>Kể câu chuyện của bạn trước ống kính</h1>
+  <p class="lead">doanhnhan.wiki thực hiện phỏng vấn, ghi hình doanh nhân và doanh nghiệp, đăng trên kênh video chính thức và gắn vào hồ sơ trên trang. Để lại thông tin, ban biên tập sẽ liên hệ để trao đổi.</p>
+</div></section>
+<div class="container layout">
+  <div class="main">
+    {% if done %}<div class="card card-lg stack">
+      <div class="verified-banner" style="font-size:15px"><b>Đã nhận yêu cầu.</b>&nbsp;Ban biên tập sẽ liên hệ với bạn trong {{ SITE.review_days }} ngày làm việc.</div>
+      <p style="line-height:1.7">Trong lúc chờ, bạn có thể {% if user.is_authenticated %}<a href="{% url 'member:dashboard' %}">chuẩn bị sẵn hồ sơ</a>{% else %}<a href="{% url 'accounts:signup' %}">đăng ký tài khoản</a> để chuẩn bị sẵn hồ sơ{% endif %} — video sau khi đăng sẽ được gắn vào hồ sơ của bạn.</p>
+    </div>{% else %}
+    <form class="card card-lg stack" method="post" data-consent style="gap:18px" novalidate>{% csrf_token %}
+      <h2 class="serif" style="font-size:24px;font-weight:600">Đăng ký ghi hình, phỏng vấn</h2>
+      {% if form.non_field_errors %}<div class="flash flash-error">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+      <div class="form-grid">
+        {% include "partials/field.html" with field=form.full_name %}{% include "partials/field.html" with field=form.title %}
+        {% include "partials/field.html" with field=form.company %}{% include "partials/field.html" with field=form.phone %}
+        {% include "partials/field.html" with field=form.email %}{% include "partials/field.html" with field=form.kind %}
+        {% include "partials/field.html" with field=form.story full=True %}
+        {% include "partials/field.html" with field=form.format %}{% include "partials/field.html" with field=form.preferred_time %}
+        <div id="wrap-address" class="full">
+          {% include "partials/field.html" with field=form.address full=True %}
+        </div>
+        {% include "partials/field.html" with field=form.reference_url full=True %}
+      </div>
+      <div hidden>{{ form.website_hp }}</div>
+      {% include "partials/field.html" with field=form.consent %}
+      <div><button type="submit" class="btn btn-gold" data-consent-submit>Gửi yêu cầu</button></div>
+    </form>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const formatSel = document.getElementById("id_format");
+      const addrWrap = document.getElementById("wrap-address");
+      const addrInput = document.getElementById("id_address");
+      if (!formatSel || !addrInput || !addrWrap) return;
+      const label = document.querySelector('label[for="id_address"]');
+
+      function updateAddressState() {
+        const isOnline = formatSel.value === "online";
+        if (isOnline) {
+          addrWrap.style.display = "none";
+          addrInput.required = false;
+          if (label) {
+            const star = label.querySelector(".required");
+            if (star) star.remove();
+          }
+        } else {
+          addrWrap.style.display = "";
+          addrInput.required = true;
+          if (label && !label.querySelector(".required")) {
+            const star = document.createElement("span");
+            star.className = "required";
+            star.style.color = "#DC2626";
+            star.style.fontWeight = "700";
+            star.style.marginLeft = "2px";
+            star.textContent = "*";
+            label.appendChild(star);
+          }
+        }
+      }
+
+      formatSel.addEventListener("change", updateAddressState);
+      updateAddressState();
+
+      const timeInput = document.getElementById("id_preferred_time");
+      if (timeInput && !timeInput.min) {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        timeInput.min = now.toISOString().slice(0, 16);
+      }
+    });
+    </script>
+    {% endif %}
+  </div>
+  <aside class="aside">
+    <div class="card card-accent"><h2 class="card-title">Quy trình</h2>
+      <ol class="timeline">
+        <li><div class="year">1. Tiếp nhận</div><div style="font-size:14px">Ban biên tập xem yêu cầu và liên hệ trao đổi.</div></li>
+        <li><div class="year">2. Lên kịch bản</div><div style="font-size:14px">Thống nhất nội dung, thời gian, địa điểm.</div></li>
+        <li><div class="year">3. Ghi hình</div><div style="font-size:14px">Thực hiện phỏng vấn, ghi hình.</div></li>
+        <li class="is-now"><div class="year">4. Đăng tải</div><div style="font-size:14px">Đăng trên kênh video và gắn vào hồ sơ trên doanhnhan.wiki.</div></li>
+      </ol></div>
+    {% if SITE.editorial_email or SITE.contact_phone %}<div class="card"><h2 class="card-title" style="margin-bottom:8px">Liên hệ trực tiếp</h2>
+      <p style="font-size:14px;line-height:1.7">{% if SITE.editorial_email %}Email: <a href="mailto:{{ SITE.editorial_email }}">{{ SITE.editorial_email }}</a><br>{% endif %}{% if SITE.contact_phone %}Điện thoại: {{ SITE.contact_phone }}{% endif %}</p></div>{% endif %}
+    <a class="card card-link" href="{% url 'public:video_list' %}"><b>Xem các video đã thực hiện →</b><span class="small muted">Phỏng vấn, câu chuyện doanh nghiệp, sự kiện</span></a>
+    <a class="card card-link" href="{% url 'public:feedback' %}"><b>Liên hệ khác →</b><span class="small muted">Hợp tác hiệp hội, gửi sự kiện, báo thông tin sai</span></a>
+  </aside>
+</div>
+{% endblock %}

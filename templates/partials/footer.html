@@ -1,0 +1,17 @@
+<footer class="site-footer">
+  <div class="container">
+    <div>
+      <div class="logo" style="font-size:20px">doanhnhan<span>.wiki</span></div>
+      <p>Trang cộng đồng lưu giữ thông tin doanh nhân trẻ tiêu biểu Việt Nam. Vận hành và quản trị bởi {{ SITE.operator_name }}.</p>
+    </div>
+    <nav class="footer-links" aria-label="Liên kết chân trang">
+      <a href="{% url 'public:about' %}">Giới thiệu</a>
+      <a href="{% url 'public:policy_detail' 'dieu-khoan' %}">Điều khoản sử dụng</a>
+      <a href="{% url 'public:policy_detail' 'quy-che-bien-tap' %}">Quy chế biên tập</a>
+      <a href="{% url 'public:policy_detail' 'chinh-sach-du-lieu' %}">Chính sách dữ liệu</a>
+      <a href="{% url 'public:contact' %}">Liên hệ ghi hình, phỏng vấn</a>
+      <a href="{% url 'accounts:signup' %}">Đăng ký tài khoản</a>
+      <a href="{% url 'public:donate' %}" class="donate">Tài trợ doanhnhan.wiki</a>
+    </nav>
+  </div>
+</footer>

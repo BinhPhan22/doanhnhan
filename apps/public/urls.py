@@ -1,0 +1,47 @@
+from django.urls import path
+
+from . import views
+
+app_name = "public"
+
+urlpatterns = [
+    path("", views.home, name="home"),
+    path("doanh-nhan/", views.person_list, name="person_list"),
+    path("doanh-nhan/<slug:slug>/", views.person_detail, name="person_detail"),
+    path("doanh-nhan/<int:pk>/xem-sdt/", views.person_reveal_phone, name="person_reveal_phone"),
+    path("doanh-nhan/<slug:slug>/og.png", views.person_og_image, name="person_og_image"),
+    path("doanh-nhan/<slug:slug>/in/", views.person_print, name="person_print"),
+    path("doanh-nhan/<slug:slug>/lich-su/", views.person_history, name="person_history"),
+    path("doanh-nghiep/", views.company_list, name="company_list"),
+    path("doanh-nghiep/<slug:slug>/", views.company_detail, name="company_detail"),
+    path("doanh-nghiep/<slug:slug>/og.png", views.company_og_image, name="company_og_image"),
+    path("doanh-nghiep/<slug:slug>/lich-su/", views.company_history, name="company_history"),
+    path("og-default.png", views.default_og_image, name="default_og_image"),
+    path("story/", views.story_list, name="story_list"),
+    path("story/<slug:slug>/", views.story_detail, name="story_detail"),
+    path("nganh-nghe/", views.sector_list, name="sector_list"),
+    path("nganh-nghe/<slug:slug>/", views.sector_detail, name="sector_detail"),
+    path("hiep-hoi/", views.association_list, name="association_list"),
+    path("hiep-hoi/<slug:slug>/", views.association_detail, name="association_detail"),
+    path("su-kien/", views.event_list, name="event_list"),
+    path("su-kien/<slug:slug>/", views.event_detail, name="event_detail"),
+    path("podcast/", views.podcast_list, name="podcast_list"),
+    path("postcast/", views.podcast_list, name="postcast_alias"),
+    path("podcast/<slug:slug>/", views.podcast_detail, name="podcast_detail"),
+    path("postcast/<slug:slug>/", views.podcast_detail),
+    path("podcast/<slug:slug>/play/", views.podcast_track_play, name="podcast_track_play"),
+    path("postcard/", views.postcard_list, name="postcard_list"),
+    path("postcard/<slug:slug>/", views.postcard_detail, name="postcard_detail"),
+    path("postcard/<slug:slug>/tai-ve/", views.postcard_download, name="postcard_download"),
+    path("video/", views.video_list, name="video_list"),
+    path("tim-kiem/", views.search, name="search"),
+    path("api/goi-y/", views.suggest, name="suggest"),
+    path("api/toggle-like/", views.toggle_like, name="toggle_like"),
+    path("donate/", views.donate, name="donate"),
+    path("gioi-thieu/", views.about, name="about"),
+    path("chinh-sach/", views.policy_index, name="policy_index"),
+    path("chinh-sach/<slug:code>/", views.policy_detail, name="policy_detail"),
+    path("lien-he/", views.contact, name="contact"),
+    path("lien-he/gop-y/", views.feedback, name="feedback"),
+    path("yeu-cau-du-lieu/", views.data_request, name="data_request"),
+]

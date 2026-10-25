@@ -1,0 +1,103 @@
+<datalist id="ds-company"></datalist>
+<div class="card form-section">
+  <h2>1. Thông tin cơ bản</h2>
+  <div class="form-grid">
+    <div class="field"><label for="p-ten">Họ và tên <span class="required">*</span></label><input id="p-ten" name="full_name" class="input" required value="{{ data.full_name|default:'' }}">{% if errors.full_name %}<p class="field-error">{{ errors.full_name }}</p>{% endif %}</div>
+    <div class="field"><label for="p-ns">Năm sinh</label><input id="p-ns" name="birth_year" class="input" inputmode="numeric" placeholder="yyyy" value="{{ data.birth_year|default_if_none:'' }}">{% if errors.birth_year %}<p class="field-error">{{ errors.birth_year }}</p>{% endif %}</div>
+    <div class="field"><label for="p-qq">Quê quán</label><select id="p-qq" name="hometown" class="select"><option value="">— Chọn tỉnh / thành —</option>{% for pr in provinces %}<option value="{{ pr.pk }}"{% if data.hometown == pr.pk %} selected{% endif %}>{{ pr.name }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="p-noi">Nơi hoạt động chính</label><select id="p-noi" name="current_province" class="select"><option value="">— Chọn tỉnh / thành —</option>{% for pr in provinces %}<option value="{{ pr.pk }}"{% if data.current_province == pr.pk %} selected{% endif %}>{{ pr.name }}</option>{% endfor %}</select></div>
+    <div class="field full"><label for="p-head">Dòng chức danh hiển thị</label><input id="p-head" name="headline" class="input" maxlength="200" placeholder="Ví dụ: Nhà sáng lập &amp; CEO [Tên công ty]" value="{{ data.headline|default:'' }}"></div>
+    <div class="field">
+      <label for="p-phone">Số điện thoại <span class="chip chip-sm" style="font-size:11px;background:var(--bg-subtle, #f1f5f9);color:var(--text-muted, #64748b);padding:1px 6px">🔒 Bảo mật</span></label>
+      <input id="p-phone" name="phone" class="input" type="tel" placeholder="Ví dụ: 0912 345 678" value="{{ data.phone|default:'' }}">
+      {% if errors.phone %}<p class="field-error">{{ errors.phone }}</p>{% endif %}
+      <p class="hint">🔒 Bảo mật tuyệt đối, không hiển thị công khai. Số điện thoại được đổi thành * và chỉ Quản trị viên mới có nút mở ra xem.</p>
+    </div>
+    <div class="field"><label for="p-email">Email công khai</label><input id="p-email" name="email_public" class="input" type="email" value="{{ data.email_public|default:'' }}">{% if errors.email_public %}<p class="field-error">{{ errors.email_public }}</p>{% endif %}</div>
+    <div class="field"><label for="p-web">Website / LinkedIn</label><input id="p-web" name="website" class="input" type="url" placeholder="https://" value="{{ data.website|default:'' }}">{% if errors.website %}<p class="field-error">{{ errors.website }}</p>{% endif %}</div>
+  </div>
+  {% include "editor/image.html" with field="portrait" label="Ảnh chân dung · JPG/PNG/WEBP, tối thiểu 600×600px, nền đơn giản, tối đa 5 MB" path=data.portrait round=True %}
+  <fieldset style="border:0;margin:0;padding:0" class="stack">
+    <legend class="label" style="margin-bottom:8px">Công khai trên hồ sơ</legend>
+    <div class="row" style="gap:18px">
+      <label class="check"><input type="checkbox" name="show_birth_year"{% if data.show_birth_year|default_if_none:True %} checked{% endif %}> Năm sinh</label>
+      <label class="check"><input type="checkbox" name="show_hometown"{% if data.show_hometown|default_if_none:True %} checked{% endif %}> Quê quán</label>
+      <label class="check"><input type="checkbox" name="show_email"{% if data.show_email|default_if_none:True %} checked{% endif %}> Email công khai</label>
+    </div>
+  </fieldset>
+</div>
+
+<div class="card form-section">
+  <h2>2. Doanh nghiệp</h2>
+  <p class="hint">Gõ tên hoặc mã số thuế để tìm kiếm doanh nghiệp đã có. Nếu doanh nghiệp chưa có trong hệ thống, bạn có thể nhập tên và mã số thuế để hệ thống tự động tạo bản nháp mới lưu kèm hồ sơ doanh nhân.</p>
+  <div id="p-cty-list" class="stack" style="gap:10px">
+    {% for c in data.companies|default:blank_rows %}<div class="repeat-row" data-repeat-row style="grid-template-columns:minmax(0,2fr) 140px 170px minmax(0,1fr) 85px 85px 105px auto">
+      <div class="field"><label>Doanh nghiệp</label><input name="company_name" class="input" list="ds-company" data-suggest="company" autocomplete="off" placeholder="Tên doanh nghiệp" value="{{ c.company_name|default:'' }}"></div>
+      <div class="field"><label>Mã số thuế</label><input name="company_tax" class="input" data-company-tax placeholder="10 số (tùy chọn)" value="{{ c.tax_code|default:'' }}" autocomplete="off"></div>
+      <div class="field"><label>Vai trò</label><select name="company_role" class="select">{% for val, lbl in role_choices %}<option value="{{ val }}"{% if c.role == val %} selected{% endif %}>{{ lbl }}</option>{% endfor %}</select></div>
+      <div class="field"><label>Chức danh</label><input name="company_title" class="input" placeholder="Tùy chọn" value="{{ c.title|default:'' }}"></div>
+      <div class="field"><label>Từ năm</label><input name="company_start" class="input" inputmode="numeric" value="{{ c.start_year|default_if_none:'' }}"></div>
+      <div class="field"><label>Đến năm</label><input name="company_end" class="input" inputmode="numeric" placeholder="nay" value="{{ c.end_year|default_if_none:'' }}"></div>
+      <div class="field"><label>Chính</label><select name="company_primary" class="select"><option value="0">Không</option><option value="1"{% if c.is_primary %} selected{% endif %}>Có</option></select></div>
+      {% include "editor/_row_actions.html" %}
+    </div>{% endfor %}
+  </div>
+  <button type="button" class="chip chip-lg chip-dashed" style="align-self:flex-start" data-repeat-add="#p-cty-list">+ Thêm doanh nghiệp</button>
+</div>
+
+{% if associations %}<div class="card form-section">
+  <h2>3. Hiệp hội</h2>
+  <p class="hint">Hội viên mới cần ban biên tập hoặc hiệp hội xác nhận trước khi hiện trên hồ sơ.</p>
+  <div id="p-hh-list" class="stack" style="gap:10px">
+    {% for m in data.memberships|default:blank_rows %}<div class="repeat-row" data-repeat-row style="grid-template-columns:minmax(0,2fr) minmax(0,1fr) 100px auto">
+      <div class="field"><label>Hiệp hội</label><select name="assoc_id" class="select"><option value="">— Chọn —</option>{% for a in associations %}<option value="{{ a.pk }}"{% if m.association_id == a.pk %} selected{% endif %}>{{ a.name }}</option>{% endfor %}</select></div>
+      <div class="field"><label>Chức danh trong hội</label><input name="assoc_position" class="input" placeholder="Hội viên" value="{{ m.position|default:'' }}"></div>
+      <div class="field"><label>Từ năm</label><input name="assoc_start" class="input" inputmode="numeric" value="{{ m.start_year|default_if_none:'' }}"></div>
+      {% include "editor/_row_actions.html" %}
+    </div>{% endfor %}
+  </div>
+  <button type="button" class="chip chip-lg chip-dashed" style="align-self:flex-start" data-repeat-add="#p-hh-list">+ Thêm hiệp hội</button>
+</div>{% endif %}
+
+{% if staff and available_badges %}
+<div class="card form-section">
+  <h2>Huy hiệu &amp; Giải thưởng danh dự</h2>
+  <p class="hint">Tôn vinh giải thưởng cho doanh nhân (Giải thưởng Sao Đỏ, Doanh nhân trẻ khởi nghiệp xuất sắc, Doanh nhân tiêu biểu,...). Huy hiệu sẽ hiển thị trực tiếp trên thẻ danh mục và trang cá nhân.</p>
+  <div id="p-award-list" class="stack" style="gap:10px">
+    {% for a in data.awards|default:blank_rows %}
+    <div class="repeat-row" data-repeat-row style="grid-template-columns:minmax(0,1.8fr) 100px minmax(0,1.2fr) minmax(0,1.5fr) auto">
+      <div class="field">
+        <label>Giải thưởng / Huy hiệu</label>
+        <select name="award_badge_id" class="select">
+          <option value="">— Chọn giải thưởng —</option>
+          {% for b in available_badges %}
+            <option value="{{ b.pk }}"{% if a.badge_id == b.pk %} selected{% endif %}>{{ b.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Năm trao</label>
+        <input name="award_year" class="input" inputmode="numeric" placeholder="yyyy" value="{{ a.year|default_if_none:'' }}">
+      </div>
+      <div class="field">
+        <label>Danh hiệu / Chi tiết</label>
+        <input name="award_title" class="input" placeholder="Ví dụ: Top 10, Top 100..." value="{{ a.title|default:'' }}">
+      </div>
+      <div class="field">
+        <label>Quyết định / Ghi chú</label>
+        <input name="award_citation" class="input" placeholder="Ví dụ: QĐ 123/QĐ-DNT..." value="{{ a.citation|default:'' }}">
+      </div>
+      {% include "editor/_row_actions.html" %}
+    </div>
+    {% endfor %}
+  </div>
+  <button type="button" class="chip chip-lg chip-dashed" style="align-self:flex-start" data-repeat-add="#p-award-list">+ Thêm giải thưởng</button>
+</div>
+{% endif %}
+
+<div class="card form-section">
+  <h2>4. Bài viết chi tiết</h2>
+  <p class="hint">Viết theo văn phong trung lập như bách khoa, ngôi thứ ba. Mỗi khẳng định quan trọng nên có chú thích nguồn [^1] khớp với mục Nguồn tham khảo.</p>
+  {% for s in sections_def %}{% include "editor/section.html" with key=s.key label=s.label hint=s.hint help=s.help rows=s.rows value=data.sections|get:s.key %}{% endfor %}
+</div>
+{% include "editor/common_tail.html" with p="p" n_milestones=5 n_videos=6 n_sources=7 %}

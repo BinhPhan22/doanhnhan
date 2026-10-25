@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Liên hệ – doanhnhan.wiki{% endblock %}
+{% block content %}
+<section class="hero"><div class="container"><p class="eyebrow">Liên hệ</p><h1>Gửi thông tin cho ban vận hành</h1><p class="lead">Đăng ký làm hiệp hội đối tác, gửi sự kiện, báo thông tin chưa chính xác hoặc góp ý khác.</p></div></section>
+<div class="container section section-last" style="max-width:820px">
+  {% if done %}<div class="card card-lg"><div class="verified-banner"><b>Đã nhận nội dung.</b>&nbsp;Cảm ơn bạn — ban vận hành sẽ phản hồi qua email.</div></div>
+  {% else %}<form class="card card-lg stack" method="post" data-consent style="gap:18px">{% csrf_token %}
+    <div class="form-grid">
+      {% include "partials/field.html" with field=form.topic full=True %}
+      {% include "partials/field.html" with field=form.full_name %}{% include "partials/field.html" with field=form.organization %}
+      {% include "partials/field.html" with field=form.email %}{% include "partials/field.html" with field=form.phone %}
+      {% include "partials/field.html" with field=form.source_url full=True %}
+      {% include "partials/field.html" with field=form.message full=True %}
+    </div>
+    <div hidden>{{ form.website_hp }}</div>
+    {% include "partials/field.html" with field=form.consent %}
+    <div><button class="btn btn-gold" type="submit" data-consent-submit>Gửi</button></div>
+  </form>{% endif %}
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const topicSel = document.getElementById("id_topic");
+  const sourceInput = document.getElementById("id_source_url");
+  if (!topicSel || !sourceInput) return;
+  const label = document.querySelector('label[for="id_source_url"]');
+
+  function updateSourceReq() {
+    const isCorrection = topicSel.value === "correction";
+    sourceInput.required = isCorrection;
+    if (label) {
+      let star = label.querySelector(".required");
+      if (isCorrection) {
+        if (!star) {
+          star = document.createElement("span");
+          star.className = "required";
+          star.style.color = "#DC2626";
+          star.style.fontWeight = "700";
+          star.style.marginLeft = "2px";
+          star.textContent = "*";
+          label.appendChild(star);
+        }
+      } else {
+        if (star) star.remove();
+      }
+    }
+  }
+  topicSel.addEventListener("change", updateSourceReq);
+  updateSourceReq();
+});
+</script>
+{% endblock %}

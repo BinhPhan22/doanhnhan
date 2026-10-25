@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load static dnw %}
+{% block title %}Sự kiện – Lịch sự kiện &amp; Kết nối giao thương – doanhnhan.wiki{% endblock %}
+{% block description %}Tổng hợp các hội thảo chuyên sâu, diễn đàn kinh tế, sự kiện kết nối giao thương B2B và lễ vinh danh doanh nhân tiêu biểu tại Việt Nam.{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="container hero-split" style="align-items:stretch">
+    <div class="grow">
+      <p class="eyebrow">Lịch sự kiện &amp; Kết nối thương trường</p>
+      <h1>Sự kiện doanh nhân</h1>
+      <p class="lead">Hội thảo chuyên sâu, kết nối giao thương, lễ trao giải và đại hội các hiệp hội doanh nghiệp. Diễn giả, nhà tài trợ và người nhận giải được ghi nhận chính thức vào hồ sơ doanh nhân.</p>
+    </div>
+
+    {% if featured %}
+      <a href="{{ featured.get_absolute_url }}" class="featured-story-hero" style="border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:12px;text-decoration:none;color:#fff">
+        <div class="featured-story-badge">
+          <span class="chip chip-solid-gold">Sự kiện tiêu điểm</span>
+          <span class="featured-story-type">{{ featured.get_kind_display }}</span>
+        </div>
+        <h2 class="featured-story-title" style="font-size:22px;line-height:1.3">{{ featured.title }}</h2>
+        <div style="font-size:13.5px;color:var(--on-dark);line-height:1.6">
+          <div>📅 <b>{{ featured.starts_at|date:"d/m/Y · H:i" }}</b></div>
+          <div>📍 {{ featured.location_label }}</div>
+          {% if featured.organizer_name %}<div>🏛️ Tổ chức: {{ featured.organizer_name }}</div>{% endif %}
+        </div>
+        <div class="featured-story-meta" style="margin-top:auto">
+          <span>👥 {{ featured.participant_count }} doanh nhân &amp; đại biểu</span>
+          <span class="read-more-link">Xem chi tiết sự kiện →</span>
+        </div>
+      </a>
+    {% endif %}
+  </div>
+</section>
+
+<div class="container section" style="padding-top:32px">
+  <!-- Bộ lọc thông minh: Ô tìm kiếm + Dropdown Loại sự kiện + Nút tìm kiếm (Chuẩn UI Story) -->
+  <form class="search-bar" action="{% url 'public:event_list' %}" method="get" role="search" style="margin-top:0;margin-bottom:16px;max-width:100%">
+    {% if time_filter and time_filter != 'all' %}<input type="hidden" name="thoi-gian" value="{{ time_filter }}">{% endif %}
+    <label for="event-q" class="sr-only">Tìm sự kiện</label>
+    <input id="event-q" name="q" type="search" value="{{ q }}" placeholder="Tìm theo tên sự kiện, đơn vị tổ chức, địa điểm…">
+    <label for="event-kind" class="sr-only">Loại sự kiện</label>
+    <select id="event-kind" name="loai" onchange="this.form.submit()">
+      <option value="">Tất cả loại sự kiện ({% if not kind %}{{ total_count }}{% else %}Xem hết{% endif %})</option>
+      {% for val, label in kinds %}
+        <option value="{{ val }}"{% if kind == val %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-gold">Tìm kiếm</button>
+  </form>
+
+  <!-- Thanh Tabs thời gian & Thống kê kết quả -->
+  <div class="row between" style="margin-bottom:24px;flex-wrap:wrap;gap:12px;align-items:center">
+    <!-- Tabs thời gian (Pills) -->
+    <div class="tabs" role="tablist" aria-label="Lọc thời gian" style="margin:0">
+      <a href="{% url 'public:event_list' %}?thoi-gian=all{% if kind %}&loai={{ kind }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="tab{% if time_filter == 'all' or not time_filter %} is-active{% endif %}" style="text-decoration:none">
+        ✨ Tất cả ({{ total_count }})
+      </a>
+      <a href="{% url 'public:event_list' %}?thoi-gian=upcoming{% if kind %}&loai={{ kind }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="tab{% if time_filter == 'upcoming' %} is-active{% endif %}" style="text-decoration:none">
+        🟢 Sắp diễn ra ({{ upcoming_count }})
+      </a>
+      <a href="{% url 'public:event_list' %}?thoi-gian=past{% if kind %}&loai={{ kind }}{% endif %}{% if q %}&q={{ q }}{% endif %}" class="tab{% if time_filter == 'past' %} is-active{% endif %}" style="text-decoration:none">
+        ⏳ Đã diễn ra ({{ past_count }})
+      </a>
+    </div>
+
+    <div style="font-size:14px;color:var(--muted)">
+      <b style="color:var(--ink)">{{ total_count }}</b> sự kiện phù hợp
+      {% if kind_label %} · Loại: <b>{{ kind_label }}</b>{% endif %}
+      {% if q %} · Từ khóa: <b>"{{ q }}"</b>{% endif %}
+      {% if q or kind or time_filter != 'all' %} · <a href="{% url 'public:event_list' %}" style="color:var(--gold-dark);font-weight:600">✕ Bỏ lọc</a>{% endif %}
+    </div>
+  </div>
+
+  <!-- Lưới sự kiện hiện đại 4 cột x 3 hàng = 12 items/trang -->
+  <div class="event-cards-grid">
+    {% for e in events %}
+      {% include "partials/event_card.html" %}
+    {% empty %}
+      <div style="grid-column:1/-1;text-align:center;padding:56px 20px;background:#FFFFFF;border-radius:16px;border:1px solid var(--line)">
+        <div style="font-size:48px;margin-bottom:12px">📅</div>
+        <h3 style="margin-bottom:8px">Chưa có sự kiện nào cho mục này</h3>
+        <p class="muted">Hãy chọn mốc thời gian khác hoặc bấm bỏ lọc để khám phá các sự kiện giao thương.</p>
+        <a href="{% url 'public:event_list' %}" class="btn btn-gold" style="margin-top:16px;border-radius:999px">Xem tất cả sự kiện</a>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Phân trang chuẩn 4 cột x 3 hàng = 12 items/trang -->
+  <div style="margin-top:40px;display:flex;justify-content:center">
+    {% paginate page %}
+  </div>
+
+  <!-- Banner Đăng sự kiện dành cho Hiệp hội & Ban tổ chức -->
+  <div class="card-dark" style="margin-top:48px;border-radius:16px;padding:32px;display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between">
+    <div style="max-width:640px">
+      <h3 style="color:#fff;margin:0 0 8px;font-size:20px">Bạn là Ban tổ chức hoặc Hiệp hội Doanh nghiệp?</h3>
+      <p style="color:var(--on-dark);margin:0;font-size:14px;line-height:1.6">
+        Gửi thông tin sự kiện để ban biên tập kiểm tra và công bố rộng rãi tới cộng đồng doanh nhân trẻ cả nước. Diễn giả, nhà tài trợ và người nhận giải sẽ được cập nhật tự động vào hồ sơ.
+      </p>
+    </div>
+    <a class="btn btn-gold" href="{% url 'public:feedback' %}?chu-de=event" style="border-radius:999px;padding:12px 24px;font-weight:700">
+      Đăng ký gửi sự kiện →
+    </a>
+  </div>
+</div>
+{% endblock %}

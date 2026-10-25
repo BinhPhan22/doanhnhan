@@ -1,0 +1,24 @@
+{% extends "staff/base.html" %}
+{% block title %}Duyệt tài khoản{% endblock %}
+{% block content %}
+<div class="row between"><h1 class="admin-title">Duyệt tài khoản</h1>
+  <div class="tabs">{% for val, label in statuses %}<a class="tab" role="tab" aria-selected="{% if status == val %}true{% else %}false{% endif %}" href="?trang-thai={{ val }}">{{ label }}</a>{% endfor %}</div></div>
+<div class="stack" style="gap:12px;margin-top:20px">
+{% for app in page %}<div class="card">
+  <div class="row between" style="align-items:flex-start">
+    <div><b style="font-size:17px">{{ app.user.full_name }}</b> <span class="status-pill {{ app.status }}">{{ app.get_status_display }}</span>
+      <div class="small muted">{{ app.user.email }} · {{ app.user.phone }} · đăng ký {{ app.created_at|date:"d/m/Y H:i" }}{% if app.user.auth_provider == "google" %} · qua Google{% endif %}</div>
+      <p style="margin-top:8px"><b>{{ app.get_applicant_type_display }}</b>{% if app.organization %} · {{ app.organization }}{% endif %}</p>
+      {% if app.intro %}<p class="small" style="margin-top:4px">{{ app.intro }}</p>{% endif %}
+      {% if app.reference_url %}<p class="small"><a href="{{ app.reference_url }}" target="_blank" rel="noopener nofollow">{{ app.reference_url|truncatechars:70 }} ↗</a></p>{% endif %}
+      {% if app.review_note %}<p class="small muted">Ghi chú: {{ app.review_note }} — {{ app.reviewed_by.full_name }}</p>{% endif %}
+    </div>
+    {% if app.status == "pending" or app.status == "needs_info" %}<form method="post" action="{% url 'staff:account_decide' app.pk %}" class="stack" style="gap:8px;min-width:280px">{% csrf_token %}
+      <textarea name="note" class="textarea" rows="2" placeholder="Ghi chú (bắt buộc khi yêu cầu bổ sung / từ chối)"></textarea>
+      <div class="row" style="gap:6px"><button class="btn btn-dark btn-sm" name="action" value="approve">Duyệt</button><button class="btn btn-outline btn-sm" name="action" value="needs_info">Yêu cầu bổ sung</button><button class="btn btn-danger btn-sm" name="action" value="reject">Từ chối</button></div>
+    </form>{% endif %}
+  </div>
+</div>{% empty %}<div class="card empty-state">Không có hồ sơ đăng ký nào ở trạng thái này.</div>{% endfor %}
+</div>
+{% paginate page %}
+{% endblock %}

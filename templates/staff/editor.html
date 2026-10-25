@@ -1,0 +1,38 @@
+{% extends "staff/base.html" %}
+{% block title %}{% if instance %}Sửa: {{ instance }}{% else %}Nhập mới{% endif %}{% endblock %}
+{% block content %}
+<p class="small"><a href="{% if entity_type == 'person' %}{% url 'staff:person_list' %}{% else %}{% url 'staff:company_list' %}{% endif %}">← Danh sách</a></p>
+<div class="row between" style="margin-top:8px"><h1 class="admin-title">{% if instance %}Sửa: {{ instance }}{% elif entity_type == "person" %}Nhập hồ sơ doanh nhân{% else %}Nhập doanh nghiệp{% endif %}</h1>
+  {% if instance %}
+  <div class="row" style="gap:8px">
+    <a class="btn btn-outline btn-sm" href="{{ instance.get_absolute_url }}" target="_blank">Xem trang ↗</a>
+    <a class="btn btn-outline btn-sm" href="{% if entity_type == 'person' %}{% url 'public:person_history' instance.slug %}{% else %}{% url 'public:company_history' instance.slug %}{% endif %}" target="_blank">Lịch sử</a>
+    <button form="edit-toggle-form" type="submit" class="btn btn-outline btn-sm">{% if instance.status == 'archived' %}Bỏ ẩn{% else %}Ẩn{% endif %}</button>
+    <button form="edit-delete-form" type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn hồ sơ này?')">Xóa</button>
+  </div>
+  {% endif %}
+</div>
+{% if pending %}<div class="flash flash-warning" style="margin-top:12px">Trang này đang có {{ pending|length }} bản đề xuất chờ duyệt: {% for r in pending %}<a href="{% url 'staff:review' r.pk %}">#{{ r.pk }} ({{ r.author_label }})</a>{% if not forloop.last %}, {% endif %}{% endfor %}. Lưu ở đây sẽ tạo phiên bản mới; bản đề xuất vẫn giữ nguyên để bạn xem xét.</div>{% endif %}
+<p class="muted" style="margin-top:8px">Ban biên tập lưu là công bố ngay, đồng thời ghi một phiên bản vào lịch sử sửa đổi.</p>
+<form class="stack" method="post" enctype="multipart/form-data" style="gap:20px;margin-top:20px;max-width:1100px" novalidate>{% csrf_token %}
+  {% if entity_type == "person" %}{% include "editor/person.html" %}{% else %}{% include "editor/company.html" %}{% endif %}
+  <div class="sticky-actions row between" style="align-items:center;flex-wrap:wrap;gap:12px">
+    <div><button type="submit" class="btn btn-gold">Lưu &amp; công bố</button></div>
+    {% if instance %}
+    <div class="row" style="gap:8px">
+      <button form="edit-toggle-form" type="submit" class="btn btn-outline">{% if instance.status == 'archived' %}Bỏ ẩn hồ sơ{% else %}Ẩn hồ sơ{% endif %}</button>
+      <button form="edit-delete-form" type="submit" class="btn btn-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn hồ sơ này?')">Xóa hồ sơ</button>
+    </div>
+    {% endif %}
+  </div>
+</form>
+{% if instance %}
+<form id="edit-toggle-form" method="post" action="{% if entity_type == 'person' %}{% url 'staff:person_toggle_status' instance.pk %}{% else %}{% url 'staff:company_toggle_status' instance.pk %}{% endif %}" style="display:none">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+</form>
+<form id="edit-delete-form" method="post" action="{% if entity_type == 'person' %}{% url 'staff:person_delete' instance.pk %}{% else %}{% url 'staff:company_delete' instance.pk %}{% endif %}" style="display:none">
+  {% csrf_token %}
+</form>
+{% endif %}
+{% endblock %}

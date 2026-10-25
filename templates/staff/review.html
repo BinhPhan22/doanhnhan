@@ -1,0 +1,41 @@
+{% extends "staff/base.html" %}
+{% block title %}Duyệt: {{ rev.title }}{% endblock %}
+{% block content %}
+<p class="small"><a href="{% url 'staff:dashboard' %}">← Hàng chờ duyệt</a></p>
+<div class="row between" style="margin-top:8px">
+  <h1 class="admin-title">{{ rev.title }}</h1>
+  <span class="status-pill {{ rev.state }}">{{ rev.get_state_display }}</span>
+</div>
+<p class="muted" style="margin-top:6px">{{ rev.get_kind_display }} · {{ rev.get_entity_type_display }} · gửi bởi <b>{{ rev.author_label }}</b> {{ rev.author.full_name }} ({{ rev.author.email }}) · {{ rev.created_at|date:"d/m/Y H:i" }}{% if rev.target %} · <a href="{{ rev.target.get_absolute_url }}" target="_blank">Xem trang hiện tại ↗</a>{% endif %}</p>
+<div class="layout" style="padding-top:20px;padding-bottom:0">
+  <div class="main card">
+    {% if rev.note %}<div class="note" style="margin-bottom:16px"><b>Ghi chú của người gửi:</b> {{ rev.note }}</div>{% endif %}
+    <h2 class="card-title">So sánh thay đổi</h2>
+    {% include "partials/diff.html" %}
+  </div>
+  <aside class="aside" style="flex:1 1 340px">
+    <div class="card">
+      <h2 class="card-title">Gợi ý tự động</h2>
+      <p class="small muted" style="margin-bottom:8px">Kiểm tra theo quy tắc: trùng tên, mã số thuế, số từ, nguồn, dấu mốc, link video.</p>
+      <ul class="list-plain small">{% for c in checks %}<li class="check-{{ c.level }}">{% if c.level == "ok" %}✓{% elif c.level == "warn" %}!{% else %}i{% endif %} {{ c.text }}{% if c.url %} <a href="{{ c.url }}" target="_blank">mở ↗</a>{% endif %}</li>{% empty %}<li class="muted">Không có.</li>{% endfor %}</ul>
+    </div>
+    {% if rev.state == "pending" or rev.state == "needs_info" %}
+    <form class="card stack" method="post" style="gap:12px">{% csrf_token %}
+      <h2 class="card-title" style="margin:0">Quyết định</h2>
+      <div class="field"><label for="ghichu">Ghi chú biên tập</label><textarea id="ghichu" name="review_note" class="textarea" rows="4" placeholder="Bắt buộc khi Từ chối hoặc Yêu cầu bổ sung — người gửi sẽ nhận được ghi chú này qua email"></textarea></div>
+      <div class="row" style="gap:8px">
+        <button type="submit" name="action" value="approve" class="btn btn-dark" style="flex:1">Duyệt &amp; công bố</button>
+        <button type="submit" name="action" value="needs_info" class="btn btn-outline" style="flex:1">Yêu cầu bổ sung</button>
+        <button type="submit" name="action" value="reject" class="btn btn-danger" style="flex:1" formnovalidate>Từ chối</button>
+      </div>
+      <p class="small muted">Cần chỉnh nhỏ trước khi công bố? Duyệt rồi sửa trực tiếp trong <a href="{% if rev.entity_type == 'person' %}{% url 'staff:person_list' %}{% else %}{% url 'staff:company_list' %}{% endif %}">mục nhập liệu</a> — mỗi lần sửa đều lưu lịch sử.</p>
+    </form>
+    {% else %}<div class="card small">Đã xử lý bởi {{ rev.reviewer.full_name|default:"—" }} lúc {{ rev.reviewed_at|date:"d/m/Y H:i" }}.{% if rev.review_note %}<br>Ghi chú: {{ rev.review_note }}{% endif %}</div>{% endif %}
+    <div class="card small">
+      <h2 class="card-title">Người gửi</h2>
+      {% if author_app %}<p>Đăng ký với tư cách <b>{{ author_app.get_applicant_type_display }}</b>{% if author_app.organization %} · {{ author_app.organization }}{% endif %}</p>{% if author_app.reference_url %}<p><a href="{{ author_app.reference_url }}" target="_blank" rel="noopener">{{ author_app.reference_url|truncatechars:50 }}</a></p>{% endif %}{% endif %}
+      <p class="muted">{% for s in author_stats %}{{ s.state }}: {{ s.n }}{% if not forloop.last %} · {% endif %}{% endfor %}</p>
+    </div>
+  </aside>
+</div>
+{% endblock %}

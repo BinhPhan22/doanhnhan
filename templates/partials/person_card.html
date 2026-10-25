@@ -1,0 +1,12 @@
+{% with link=p.primary_link %}<a class="card card-link person-card" href="{{ p.get_absolute_url }}"{% if cat %} data-cat="{{ cat }}"{% endif %}>
+  <div class="person-head">{% include "partials/avatar.html" with img=p.portrait letter=p.initials %}<div><div class="person-name">{{ p.full_name }}{% if p.verification != "none" %} {% include "partials/verified.html" %}{% endif %}{% if p.is_demo %} <span class="demo-badge">Mẫu</span>{% endif %}</div><div class="person-role">{% if link %}{{ link.label }} · {{ link.company.display_name }}{% else %}{{ p.headline }}{% endif %}</div></div></div>
+  <p class="person-bio">{% for s in p.sections.all %}{% if s.key == "summary" %}{{ s.body_md|excerpt:150 }}{% endif %}{% empty %}{{ p.headline }}{% endfor %}</p>
+  <div class="chips">{% if p.primary_badge %}<span class="badge-award badge-{{ p.primary_badge.badge.color }}"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="vertical-align:-1px;margin-right:2px"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>{{ p.primary_badge.title|default:p.primary_badge.badge.name }}</span>{% endif %}{% if link and link.company.primary_sector %}<span class="chip">{{ link.company.primary_sector.name }}</span>{% endif %}{% if p.current_province %}<span class="chip">{{ p.current_province.name }}</span>{% endif %}</div>
+  <div class="card-meta" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+    <span>{% if meta == "new" %}Gia nhập {{ p.published_at|date:"d/m/Y" }}{% else %}Cập nhật {{ p.updated_at|date:"d/m/Y" }}{% if p.source_count %} · {{ p.source_count }} nguồn{% endif %}{% endif %}</span>
+    <button type="button" class="btn-like-heart" data-like-btn data-type="person" data-id="{{ p.id }}" data-count="{{ p.likes_count|default:0 }}" title="Thả tim cho {{ p.full_name }}">
+      <svg class="heart-icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <span class="like-count" data-like-count>{{ p.likes_count|default:0 }}</span>
+    </button>
+  </div>
+</a>{% endwith %}

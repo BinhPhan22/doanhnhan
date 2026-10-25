@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% load static dnw %}
+{% block title %}{{ podcast.title }} – Podcast Doanh Nhân – doanhnhan.wiki{% endblock %}
+{% block description %}{{ podcast.summary|default:podcast.title|truncatechars:160 }}{% endblock %}
+
+{% block content %}
+<div class="container section" style="padding-top:32px;max-width:960px">
+  <div style="margin-bottom:20px">
+    <a href="{% url 'public:podcast_list' %}" class="small font-medium" style="color:var(--brand-primary);display:inline-flex;align-items:center;gap:6px">
+      ← Quay lại danh sách Podcast
+    </a>
+  </div>
+
+  <article class="podcast-detail-container card" style="padding:0;overflow:hidden">
+    <!-- Header thông tin tập -->
+    <div style="padding:32px 32px 24px;border-bottom:1px solid var(--line)">
+      <div class="row between" style="align-items:center;margin-bottom:12px;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="chip chip-solid-gold">{{ podcast.get_series_type_display }}</span>
+          {% if podcast.episode_number %}
+            <span class="chip chip-outline">Tập #{{ podcast.episode_number }}</span>
+          {% endif %}
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <button type="button" class="btn-like-heart" data-like-btn data-type="podcast" data-id="{{ podcast.id }}" data-count="{{ podcast.likes_count|default:0 }}" title="Thả tim podcast">
+            <svg class="heart-icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span class="like-count" data-like-count>{{ podcast.likes_count|default:0 }}</span>
+            <span style="font-weight:500;margin-left:2px">Thích</span>
+          </button>
+          <span class="small muted">⏱️ {{ podcast.duration_minutes }} phút · {{ podcast.published_at|date:"d/m/Y" }}</span>
+        </div>
+      </div>
+
+      <h1 style="font-size:28px;line-height:1.35;margin-bottom:16px;color:var(--ink)">
+        {{ podcast.title }}
+      </h1>
+
+      <p class="lead" style="font-size:16px;color:var(--muted);margin-bottom:20px">
+        {{ podcast.summary }}
+      </p>
+
+      <!-- Khách mời & Host -->
+      <div class="podcast-participants-card">
+        <div class="participant-item">
+          <div class="participant-avatar">👤</div>
+          <div>
+            <div class="participant-role">KHÁCH MỜI</div>
+            {% if podcast.guest_person %}
+              <a href="{{ podcast.guest_person.get_absolute_url }}" class="participant-name-link">
+                {{ podcast.guest_person.full_name }}
+              </a>
+            {% else %}
+              <div class="participant-name">{{ podcast.display_guest_name }}</div>
+            {% endif %}
+            {% if podcast.display_guest_title %}
+              <div class="participant-title">{{ podcast.display_guest_title }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if podcast.company %}
+          <div class="participant-item">
+            <div class="participant-avatar">🏢</div>
+            <div>
+              <div class="participant-role">DOANH NGHIỆP</div>
+              <a href="{{ podcast.company.get_absolute_url }}" class="participant-name-link">
+                {{ podcast.company.display_name }}
+              </a>
+              {% if podcast.company.legal_name != podcast.company.display_name %}
+                <div class="participant-title">{{ podcast.company.legal_name }}</div>
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+
+        <div class="participant-item">
+          <div class="participant-avatar">🎙️</div>
+          <div>
+            <div class="participant-role">NGƯỜI DẪN (HOST)</div>
+            <div class="participant-name">{{ podcast.host_name }}</div>
+            <div class="participant-title">{{ podcast.series_name }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Media Player (Video Embed hoặc Audio Player) -->
+    <div style="background:#0B1A2E;padding:24px 32px">
+      {% if podcast.youtube_embed_id %}
+        <div class="podcast-video-wrapper">
+          <iframe src="https://www.youtube.com/embed/{{ podcast.youtube_embed_id }}?autoplay=0" title="{{ podcast.title }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;aspect-ratio:16/9;border-radius:8px"></iframe>
+        </div>
+      {% elif podcast.cover_image %}
+        <div style="text-align:center;margin-bottom:18px">
+          <img src="{{ podcast.cover_image.url }}" alt="{{ podcast.title }}" style="max-height:280px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.4)">
+        </div>
+      {% endif %}
+
+      {% if podcast.audio_url %}
+        <div class="podcast-native-audio-player">
+          <div style="color:var(--gold-light);font-size:13px;font-weight:600;margin-bottom:8px">🎧 Nghe trực tiếp bản thu âm:</div>
+          <audio controls style="width:100%;height:40px" onplay="trackPlayCount()">
+            <source src="{{ podcast.audio_url }}" type="audio/mpeg">
+            Trình duyệt của bạn không hỗ trợ phát audio trực tiếp.
+          </audio>
+        </div>
+      {% endif %}
+
+      <!-- Nút nghe trên các nền tảng khác -->
+      <div class="podcast-external-platforms">
+        <span class="platforms-label">Nghe trên ứng dụng yêu thích:</span>
+        <div class="platforms-buttons">
+          {% if podcast.spotify_url %}
+            <a href="{{ podcast.spotify_url }}" target="_blank" rel="noopener" class="platform-btn btn-spotify">
+              <span>🎧 Spotify</span>
+            </a>
+          {% endif %}
+          {% if podcast.apple_podcasts_url %}
+            <a href="{{ podcast.apple_podcasts_url }}" target="_blank" rel="noopener" class="platform-btn btn-apple">
+              <span>🎙️ Apple Podcasts</span>
+            </a>
+          {% endif %}
+          {% if podcast.youtube_url %}
+            <a href="{{ podcast.youtube_url }}" target="_blank" rel="noopener" class="platform-btn btn-youtube">
+              <span>▶️ YouTube</span>
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Show Notes & Mốc thời gian -->
+    {% if podcast.content_md %}
+      <div style="padding:32px">
+        <h3 style="margin-bottom:16px;font-size:20px;color:var(--ink)">Nội dung buổi trò chuyện &amp; Mốc thời gian (Show Notes)</h3>
+        <div class="markdown-body podcast-notes">
+          {{ podcast.content_md|md }}
+        </div>
+      </div>
+    {% endif %}
+
+    <div style="background:#F8FAFC;padding:16px 32px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)">
+      <div>🎧 {{ podcast.listeners_count }} lượt nghe · 👁️ {{ podcast.views_count }} lượt xem</div>
+      <div>Chia sẻ tập này: <button type="button" class="btn btn-xs btn-outline" onclick="copyCurrentUrl()">📋 Sao chép liên kết</button></div>
+    </div>
+  </article>
+
+  <!-- Các tập cùng Series -->
+  {% if related_podcasts %}
+    <div style="margin-top:48px">
+      <h3 style="margin-bottom:20px">Các tập khác cùng chuyên mục</h3>
+      <div class="podcast-grid">
+        {% for p in related_podcasts %}
+          <article class="podcast-card card">
+            <div class="podcast-card-thumb-wrap">
+              <a href="{{ p.get_absolute_url }}">
+                {% if p.cover_image %}
+                  <img src="{{ p.cover_image.url }}" alt="{{ p.title }}" class="podcast-card-img" loading="lazy">
+                {% else %}
+                  <div class="podcast-card-placeholder">
+                    <span class="podcast-card-icon">🎙️</span>
+                  </div>
+                {% endif %}
+              </a>
+              <span class="podcast-duration-badge">⏱️ {{ p.duration_minutes }}p</span>
+            </div>
+            <div class="podcast-card-content">
+              <h4 class="podcast-card-title" style="font-size:15px">
+                <a href="{{ p.get_absolute_url }}">{{ p.title }}</a>
+              </h4>
+              <p class="podcast-card-summary" style="font-size:13px">
+                {{ p.summary|truncatewords:14 }}
+              </p>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+function trackPlayCount() {
+  fetch("{% url 'public:podcast_track_play' podcast.slug %}", {
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  });
+}
+
+function copyCurrentUrl() {
+  navigator.clipboard.writeText(window.location.href).then(function() {
+    alert("Đã sao chép liên kết tập podcast vào bộ nhớ tạm!");
+  });
+}
+</script>
+{% endblock %}

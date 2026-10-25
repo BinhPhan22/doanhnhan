@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{% if complete %}Hoàn tất đăng ký{% else %}Đăng ký tài khoản{% endif %} – doanhnhan.wiki{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:40px;padding-bottom:64px">
+<div class="modal" aria-labelledby="dk-title" style="max-width:720px;margin:0 auto;box-shadow:none;border:1px solid var(--line)">
+  <div class="modal-head">
+    <p class="eyebrow" style="margin:0">Tham gia doanhnhan.wiki</p>
+    <h1 id="dk-title">{% if complete %}Hoàn tất đăng ký{% else %}Đăng ký tài khoản{% endif %}</h1>
+    <p>Xem thông tin trên doanhnhan.wiki không cần tài khoản. Tài khoản chỉ cần khi bạn muốn đưa thông tin lên.</p>
+  </div>
+  <form class="modal-body" method="post" data-consent novalidate>{% csrf_token %}
+    <ol class="small" style="margin:0;line-height:1.8;color:var(--text-2);background:var(--ivory);border-radius:10px;padding:14px 18px 14px 34px">
+      <li><b>Gửi đăng ký</b> với thông tin bên dưới.</li>
+      <li><b>Ban quản trị duyệt</b> tài khoản, có thể liên hệ để xác minh.</li>
+      <li><b>Đưa thông tin lên:</b> hồ sơ, doanh nghiệp, dấu mốc — mỗi lần gửi vẫn được biên tập viên duyệt trước khi công bố.</li>
+    </ol>
+    {% if GOOGLE_ENABLED and not complete %}<a class="btn btn-outline btn-block" href="{% url 'accounts:google_start' %}">{% include "partials/google_icon.html" %} Đăng ký bằng Google</a>
+    <div class="divider"><span>hoặc đăng ký bằng email</span></div>{% endif %}
+    {% if form.non_field_errors %}<div class="flash flash-error">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+    <div class="form-grid">
+      {% include "partials/field.html" with field=form.full_name %}
+      {% if form.email %}{% include "partials/field.html" with field=form.email %}{% endif %}
+      {% include "partials/field.html" with field=form.phone %}
+      {% if form.password1 %}
+      <div class="field"><label for="{{ form.password1.id_for_label }}">Mật khẩu</label><div class="password-wrap">{{ form.password1 }}<button type="button" class="password-toggle" data-toggle-password="#{{ form.password1.id_for_label }}" aria-pressed="false">Hiện</button></div>{% for e in form.password1.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</div>
+      {% include "partials/field.html" with field=form.password2 %}
+      <p class="hint full" style="margin-top:-6px">Mật khẩu tối thiểu 8 ký tự, không quá phổ biến và không toàn số.</p>
+      {% endif %}
+      {% include "partials/field.html" with field=form.applicant_type %}
+      {% include "partials/field.html" with field=form.organization full=True %}
+      {% include "partials/field.html" with field=form.intro full=True %}
+      {% include "partials/field.html" with field=form.reference_url full=True %}
+    </div>
+    <div hidden><label>Để trống {{ form.website_hp }}</label></div>
+    <label class="check">{{ form.accept_terms }} <span>Tôi đã đọc và đồng ý <a href="{% url 'public:policy_detail' 'dieu-khoan' %}" target="_blank" rel="noopener">Điều khoản sử dụng</a>{% with v=policies|get:"dieu-khoan" %}{% if v %} (phiên bản {{ v.version }}){% endif %}{% endwith %} <span class="required">*</span></span></label>
+    {% for e in form.accept_terms.errors %}<p class="field-error">Vui lòng đồng ý Điều khoản sử dụng.</p>{% endfor %}
+    <label class="check">{{ form.accept_data }} <span>Tôi đồng ý cho doanhnhan.wiki xử lý và công bố công khai thông tin tôi gửi lên, theo <a href="{% url 'public:policy_detail' 'chinh-sach-du-lieu' %}" target="_blank" rel="noopener">Chính sách bảo vệ dữ liệu cá nhân</a>{% with v=policies|get:"chinh-sach-du-lieu" %}{% if v %} (phiên bản {{ v.version }}){% endif %}{% endwith %} <span class="required">*</span></span></label>
+    {% for e in form.accept_data.errors %}<p class="field-error">Vui lòng đồng ý Chính sách bảo vệ dữ liệu cá nhân.</p>{% endfor %}
+    <label class="check">{{ form.newsletter }} <span>Nhận bản tin và thư mời sự kiện qua email.</span></label>
+    <div class="modal-actions">
+      <a class="btn btn-outline" href="{% url 'public:home' %}">Để sau</a>
+      <button type="submit" class="btn btn-gold" data-consent-submit>Gửi đăng ký</button>
+    </div>
+    {% if not complete %}<p class="small muted" style="font-size:12px;line-height:1.6">Đã có tài khoản? <a href="{% url 'accounts:login' %}">Đăng nhập</a>. Muốn được ghi hình, phỏng vấn mà không cần tài khoản? <a href="{% url 'public:contact' %}">Liên hệ tại đây</a>.</p>{% endif %}
+  </form>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,4 @@
+<a class="video-card" href="{% url 'public:video_list' %}?v={{ v.pk }}" data-item>
+  <div class="thumb">{% if v.thumbnail_url %}<img src="{{ v.thumbnail_url }}" alt="" loading="lazy" referrerpolicy="no-referrer">{% endif %}{% if show_kind %}<span class="thumb-kind">{{ v.get_kind_display }}</span>{% endif %}<svg class="play-icon" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="27"/><path d="M23 19l14 9-14 9z"/></svg>{% if v.duration_label %}<span class="duration">{{ v.duration_label }}</span>{% endif %}</div>
+  <div class="video-body"><div class="video-title">{{ v.title }}</div><div class="video-meta">{% if show_kind %}{{ v.related_label }}{% else %}{{ v.get_kind_display }}{% endif %} · {{ v.platform_label }}</div></div>
+</a>

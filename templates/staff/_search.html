@@ -1,0 +1,5 @@
+<form class="toolbar" action="">
+  <div class="field"><label for="q">Tìm</label><input id="q" name="q" value="{{ q }}" class="input" type="search" placeholder="{{ placeholder|default:'Tên…' }}"></div>
+  {% if statuses %}<div class="field"><label for="st">Trạng thái</label><select id="st" name="trang-thai" class="select"><option value="">Tất cả</option>{% for val, label in statuses %}<option value="{{ val }}"{% if status == val %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>{% endif %}
+  <button class="btn btn-outline" type="submit">Lọc</button>
+</form>

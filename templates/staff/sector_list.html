@@ -1,0 +1,83 @@
+{% extends "staff/base.html" %}
+{% block title %}Danh mục ngành nghề{% endblock %}
+{% block content %}
+<div class="row between" style="align-items:center;flex-wrap:wrap;gap:12px">
+  <div>
+    <h1 class="admin-title" style="margin:0">Danh mục ngành nghề</h1>
+    <p class="muted" style="margin:4px 0 0;font-size:14px">Quản lý ngành cấp 1, phân ngành cấp 2, biểu tượng và mã VSIC 2025.</p>
+  </div>
+  <div class="row" style="gap:8px">
+    <a class="btn btn-dark" href="{% url 'staff:sector_new' %}">+ Thêm ngành / phân ngành</a>
+  </div>
+</div>
+
+<div class="kpis" style="margin-top:20px">
+  <div class="kpi">
+    <div class="muted small">Ngành cấp 1</div>
+    <div class="v">{{ total_roots }}</div>
+  </div>
+  <div class="kpi">
+    <div class="muted small">Phân ngành trực thuộc</div>
+    <div class="v">{{ total_children }}</div>
+  </div>
+  <div class="kpi">
+    <div class="muted small">Doanh nghiệp đã gắn ngành</div>
+    <div class="v">{{ total_companies }}</div>
+  </div>
+</div>
+
+<div class="stack" style="gap:14px;margin-top:24px">
+  {% for s in roots %}
+  <div class="card" style="transition:box-shadow .15s">
+    <div class="row between" style="align-items:center;flex-wrap:wrap;gap:12px">
+      <div class="row" style="gap:14px;align-items:center">
+        <div class="sector-icon" aria-hidden="true" style="width:48px;height:48px;flex:none;background:var(--navy);border-radius:10px">
+          <svg viewBox="0 0 24 24" style="width:24px;height:24px"><path d="{{ s.icon_path }}"/></svg>
+        </div>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <b style="font-size:16px">{{ s.name }}</b>
+            {% if not s.is_active %}<span class="status-pill hidden">Ngừng dùng</span>{% endif %}
+          </div>
+          <div class="small muted" style="margin-top:3px">
+            {{ s.n }} doanh nghiệp · Thứ tự hiển thị: {{ s.sort_order }}
+            {% if s.vsic_code %} · Mã VSIC: {{ s.vsic_code }}{% endif %}
+            · Biểu tượng: <code>{{ s.icon }}</code>
+          </div>
+        </div>
+      </div>
+      <div class="row" style="gap:6px;align-items:center">
+        <a class="btn btn-outline btn-sm" href="{% url 'staff:sector_new' %}?parent={{ s.pk }}" title="Thêm phân ngành trực thuộc ngành này">+ Phân ngành</a>
+        <a class="btn btn-outline btn-sm" href="{% url 'staff:sector_edit' s.pk %}">Sửa</a>
+        <form method="post" action="{% url 'staff:sector_toggle_status' s.pk %}" style="display:inline">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button class="btn btn-outline btn-sm" type="submit">{% if s.is_active %}Ẩn{% else %}Hiện{% endif %}</button>
+        </form>
+        <form method="post" action="{% url 'staff:sector_delete' s.pk %}" style="display:inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa ngành {{ s.name|escapejs }}?')">
+          {% csrf_token %}
+          <button class="btn btn-danger btn-sm" type="submit">Xóa</button>
+        </form>
+      </div>
+    </div>
+
+    {% if s.children.all %}
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line-soft)">
+      <div class="small muted" style="margin-bottom:8px;font-weight:600">Phân ngành ({{ s.children.count }}):</div>
+      <div class="chips">
+        {% for c in s.children.all %}
+        <a class="chip chip-lg{% if not c.is_active %} chip-dashed{% endif %}" href="{% url 'staff:sector_edit' c.pk %}" title="Nhấn để sửa hoặc xóa phân ngành {{ c.name }}" style="gap:6px">
+          <span>{{ c.name }}</span>
+          {% if not c.is_active %}<span style="font-size:11px;color:var(--muted)">(ẩn)</span>{% endif %}
+          <span style="opacity:0.6;font-size:12px">✎</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% empty %}
+  <div class="card empty-state">Chưa có ngành nào. Chạy <code>python manage.py seed_base</code> để tạo danh mục mặc định.</div>
+  {% endfor %}
+</div>
+{% endblock %}

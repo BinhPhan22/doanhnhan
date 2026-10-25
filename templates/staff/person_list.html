@@ -1,0 +1,18 @@
+{% extends "staff/base.html" %}
+{% block title %}Hồ sơ doanh nhân{% endblock %}
+{% block content %}
+<div class="row between"><h1 class="admin-title">Hồ sơ doanh nhân</h1><a class="btn btn-dark" href="{% url 'staff:person_new' %}">+ Nhập hồ sơ mới</a></div>
+<div style="margin-top:20px">{% include "staff/_search.html" with placeholder="Tên, công ty…" %}</div>
+<div class="card" style="padding:0"><div class="table-wrap"><table class="table admin-table">
+  <thead><tr><th>Họ và tên</th><th>Trạng thái</th><th>Xác minh</th><th>Chính chủ</th><th>Bản sửa</th><th>Cập nhật</th><th></th></tr></thead>
+  <tbody>{% for p in page %}<tr><td><b>{{ p.full_name }}</b>{% if p.is_demo %} <span class="demo-badge">Mẫu</span>{% endif %}{% if p.primary_badge %} <span class="badge-award badge-{{ p.primary_badge.badge.color }}">{{ p.primary_badge.title|default:p.primary_badge.badge.name }}</span>{% endif %}{% if p.is_featured %} <span class="chip chip-gold">Nổi bật</span>{% endif %}<span class="small muted">{{ p.headline|truncatechars:60 }}</span>{% if p.display_phone %}<div class="small muted" style="margin-top:2px;display:flex;align-items:center;gap:6px"><span>📞 <span class="phone-masked-val" id="phone-val-{{ p.pk }}">{{ p.masked_phone }}</span></span>{% if request.user.role == 'admin' or request.user.is_superuser %}<button type="button" class="linklike btn-reveal-phone" data-pk="{{ p.pk }}" data-url="{% url 'public:person_reveal_phone' p.pk %}" style="font-size:11px;color:var(--gold-dark);cursor:pointer">[Mở xem]</button>{% endif %}</div>{% endif %}</td>
+    <td><span class="status-pill {{ p.status }}">{{ p.get_status_display }}</span></td><td>{{ p.get_verification_display }}</td><td>{{ p.owner.email|default:"—" }}</td><td>{{ p.rev_count }}</td><td class="muted">{{ p.updated_at|date:"d/m/Y" }}</td>
+    <td style="white-space:nowrap">
+      <a class="btn btn-dark btn-sm" href="{% url 'staff:person_edit' p.pk %}">Sửa</a>
+      <a class="btn btn-outline btn-sm" href="{{ p.get_absolute_url }}" target="_blank">Xem</a>
+      <form method="post" action="{% url 'staff:person_toggle_status' p.pk %}" style="display:inline">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-outline btn-sm" type="submit">{% if p.status == 'archived' %}Bỏ ẩn{% else %}Ẩn{% endif %}</button></form>
+      <form method="post" action="{% url 'staff:person_delete' p.pk %}" style="display:inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn hồ sơ {{ p.full_name|escapejs }}?')">{% csrf_token %}<button class="btn btn-danger btn-sm" type="submit">Xóa</button></form>
+    </td></tr>
+  {% empty %}<tr><td colspan="7" class="empty-state">Chưa có hồ sơ.</td></tr>{% endfor %}</tbody></table></div></div>
+{% paginate page %}
+{% endblock %}

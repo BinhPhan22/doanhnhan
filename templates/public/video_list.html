@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{% if current %}{{ current.title }} – Video – doanhnhan.wiki{% else %}Video – doanhnhan.wiki{% endif %}{% endblock %}
+{% block description %}{% if current %}{{ current.title }} ({{ current.get_kind_display }} · {{ current.platform_label }}). Nghe chính doanh nhân kể chuyện trên doanhnhan.wiki.{% else %}Thư viện video doanh nhân trẻ: phỏng vấn độc quyền, câu chuyện doanh nghiệp và sự kiện.{% endif %}{% endblock %}
+{% block meta %}
+<meta property="og:title" content="{% if current %}{{ current.title }} – doanhnhan.wiki{% else %}Thư viện Video Doanh nhân – doanhnhan.wiki{% endif %}">
+<meta property="og:description" content="{% if current %}{{ current.get_kind_display }} · {{ current.platform_label }}{% if current.channel_name %} · {{ current.channel_name }}{% endif %}{% else %}Phỏng vấn, câu chuyện doanh nghiệp và ghi hình sự kiện doanh nhân trẻ Việt Nam.{% endif %}">
+<meta property="og:type" content="video.other">
+<meta property="og:url" content="{{ request.build_absolute_uri }}">
+{% if current and current.thumbnail_url %}
+<meta property="og:image" content="{{ current.thumbnail_url }}">
+<meta name="twitter:image" content="{{ current.thumbnail_url }}">
+{% else %}
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% url 'public:default_og_image' %}">
+<meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% url 'public:default_og_image' %}">
+{% endif %}
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="720">
+<meta name="twitter:card" content="summary_large_image">
+{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <p class="eyebrow">Thư viện video</p>
+    <h1>Nghe chính doanh nhân kể chuyện</h1>
+    <p class="lead">Phỏng vấn, câu chuyện doanh nghiệp và ghi hình sự kiện — phát trực tiếp từ YouTube, Vimeo, Facebook, TikTok. doanhnhan.wiki không lưu trữ tệp video.</p>
+    {% if current %}<div class="hero-split" style="margin-top:28px;align-items:stretch">
+      <div class="grow">
+        <div id="featured-player" class="player" data-video-url="{{ current.url }}" data-video-title="{{ current.title }}">
+          <button type="button" class="player-btn" aria-label="Phát video"{% if current.thumbnail_url %} style="background-image:linear-gradient(rgba(11,26,46,.45),rgba(11,26,46,.45)),url('{{ current.thumbnail_url }}')"{% endif %}>
+            <svg class="play-big" width="88" height="88" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="27"/><path d="M23 18l15 10-15 10z"/></svg>
+            <span class="duration" data-now="duration">{{ current.duration_label }}</span>
+          </button>
+        </div>
+      </div>
+      <div style="flex:1 1 300px;display:flex;flex-direction:column;gap:12px">
+        <span class="chip chip-solid-gold" style="align-self:flex-start" data-now="kind">{{ current.get_kind_display }}</span>
+        <h2 class="serif" style="font-size:26px;font-weight:600;line-height:1.3;color:#fff" data-now="title">{{ current.title }}</h2>
+        <p style="font-size:14px;color:var(--on-dark)"><span data-now="platform">{{ current.platform_label }}</span>{% if current.channel_name %} · {{ current.channel_name }}{% endif %}{% if current.published_on %} · đăng {{ current.published_on|date:"d/m/Y" }}{% endif %}</p>
+        {% if current.persons.all or current.companies.all or current.events.all %}<p style="font-size:13px;font-weight:600;color:var(--gold-light);margin-top:8px">Nhân vật &amp; liên quan</p>
+        <div class="chips">
+          {% for p in current.persons.all %}<a class="chip chip-lg" href="{{ p.get_absolute_url }}" style="background:transparent;border-color:var(--gold);color:#fff">{{ p.full_name }}</a>{% endfor %}
+          {% for c in current.companies.all %}<a class="chip chip-lg" href="{{ c.get_absolute_url }}" style="background:transparent;border-color:var(--navy-line-2);color:#fff">{{ c.display_name }}</a>{% endfor %}
+          {% for e in current.events.all %}<a class="chip chip-lg" href="{{ e.get_absolute_url }}" style="background:transparent;border-color:var(--navy-line-2);color:#fff">{{ e.title|truncatechars:40 }}</a>{% endfor %}
+        </div>{% endif %}
+        <a data-now="link" href="{{ current.url }}" target="_blank" rel="noopener" style="margin-top:auto;font-size:14px;font-weight:600;color:var(--gold-light)">Xem trên {{ current.platform_label }} ↗</a>
+      </div>
+    </div>{% endif %}
+  </div>
+</section>
+<section class="container section section-last" style="padding-top:32px">
+  <div class="row between" style="margin-bottom:20px">
+    <div class="tabs" role="tablist" aria-label="Loại video" data-tabs data-target="#video-grid">
+      <button class="tab" role="tab" type="button" data-filter="all" aria-selected="true">Tất cả</button>
+      <button class="tab" role="tab" type="button" data-filter="interview" aria-selected="false">Phỏng vấn doanh nhân</button>
+      <button class="tab" role="tab" type="button" data-filter="company" aria-selected="false">Câu chuyện doanh nghiệp</button>
+      <button class="tab" role="tab" type="button" data-filter="event" aria-selected="false">Sự kiện</button>
+      <button class="tab" role="tab" type="button" data-filter="talk" aria-selected="false">Bài nói</button>
+    </div>
+    <form class="row" style="gap:8px" action="">
+      <label for="vlv" class="sr-only">Lĩnh vực</label>
+      <select id="vlv" name="nganh" class="select" style="width:auto" onchange="this.form.submit()"><option value="">Mọi lĩnh vực</option>{% for s in sectors %}<option value="{{ s.slug }}"{% if sector.pk == s.pk %} selected{% endif %}>{{ s.name }}</option>{% endfor %}</select>
+      <label for="vq" class="sr-only">Tìm video</label>
+      <input id="vq" name="q" value="{{ q }}" class="input" type="search" placeholder="Tìm video, người, công ty…" style="width:260px;max-width:100%">
+    </form>
+  </div>
+  <div data-video-library data-player="#featured-player">
+    <div id="video-grid" class="grid-4-cols">
+      {% for v in videos %}<button type="button" class="video-card{% if v.pk == current.pk %} is-selected{% endif %}" data-cat="{{ v.kind }}" data-video data-url="{{ v.url }}" data-title="{{ v.title }}" data-kind="{{ v.get_kind_display }}" data-who="{{ v.related_label }}" data-platform="{{ v.platform_label }}" data-duration="{{ v.duration_label }}" data-thumb="{{ v.thumbnail_url }}">
+        <span class="thumb">{% if v.thumbnail_url %}<img src="{{ v.thumbnail_url }}" alt="" loading="lazy" referrerpolicy="no-referrer">{% endif %}<span class="thumb-kind">{{ v.get_kind_display }}</span><svg class="play-icon" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="27"/><path d="M23 19l14 9-14 9z"/></svg>{% if v.duration_label %}<span class="duration">{{ v.duration_label }}</span>{% endif %}</span>
+        <span class="video-body"><span class="video-title" style="display:block">{{ v.title }}</span><span class="video-meta" style="display:block">{{ v.related_label }} · {{ v.platform_label }}</span></span>
+      </button>{% endfor %}
+    </div>
+    <p class="muted" data-empty {% if videos %}hidden{% endif %} style="padding:24px 0">Chưa có video cho mục này.</p>
+
+    <div style="margin-top:32px;display:flex;justify-content:center">
+      {% paginate page %}
+    </div>
+  </div>
+  <p class="note" style="margin-top:24px;font-size:14px">Bạn muốn kể câu chuyện doanh nghiệp của mình trước ống kính? <a href="{% url 'public:contact' %}"><b>Liên hệ ghi hình, phỏng vấn →</b></a></p>
+</section>
+{% endblock %}

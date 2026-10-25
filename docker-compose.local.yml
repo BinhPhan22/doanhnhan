@@ -1,0 +1,46 @@
+# Chạy thử trên máy cá nhân bằng Docker, dùng PostgreSQL giống máy chủ thật.
+#   docker compose -f docker-compose.local.yml up --build
+# Mở http://localhost:8000 — đăng nhập thử quantri1@example.com / Demo@2026!
+# Xóa sạch để làm lại từ đầu: docker compose -f docker-compose.local.yml down -v
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: doanhnhan
+      POSTGRES_USER: doanhnhan
+      POSTGRES_PASSWORD: doanhnhan-local
+    volumes:
+      - pgdata_local:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U doanhnhan -d doanhnhan"]
+      interval: 3s
+      retries: 20
+
+  web:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DJANGO_DEBUG: "1"
+      DJANGO_SECRET_KEY: local-only-not-secret
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      DATABASE_URL: postgres://doanhnhan:doanhnhan-local@db:5432/doanhnhan
+      SITE_URL: http://localhost:8000
+      MEDIA_ROOT: /data/media
+      PRIVATE_MEDIA_ROOT: /data/private_media
+    ports:
+      - "8000:8000"
+    volumes:
+      - media_local:/data/media
+      - private_media_local:/data/private_media
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py seed_base &&
+             python manage.py seed_test &&
+             python manage.py runserver 0.0.0.0:8000"
+
+volumes:
+  pgdata_local:
+  media_local:
+  private_media_local:

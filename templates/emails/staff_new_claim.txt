@@ -1,0 +1,4 @@
+Yêu cầu nhận quản lý hồ sơ: {{ claim.person.full_name }}
+Người yêu cầu: {{ claim.user.full_name }} <{{ claim.user.email }}>
+
+Xử lý tại: {{ site_url }}/quan-tri/nhan-ho-so/

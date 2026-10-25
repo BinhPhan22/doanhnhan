@@ -1,0 +1,7 @@
+Yêu cầu về dữ liệu cá nhân #{{ obj.pk }}: {{ obj.get_kind_display }}
+Từ: {{ obj.full_name }} <{{ obj.email }}>
+Hồ sơ: {{ obj.profile_url }}
+
+{{ obj.detail }}
+
+Xử lý tại: {{ site_url }}/quan-tri/yeu-cau-du-lieu/{{ obj.pk }}/

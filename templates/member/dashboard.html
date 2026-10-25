@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Thành viên – doanhnhan.wiki{% endblock %}
+{% block content %}
+{% include "member/_hero.html" with heading="Trang thành viên" %}
+<div class="container layout">
+  <div class="main stack" style="gap:20px">
+    {% if user.status == "pending" %}
+      <div class="card card-lg">
+        <div class="verified-banner" style="font-size:15px"><b>Tài khoản đang chờ duyệt.</b>&nbsp;Ban quản trị sẽ xem trong {{ SITE.review_days }} ngày làm việc.</div>
+        {% if application.status == "needs_info" %}<p class="note" style="margin-top:14px"><b>Ban quản trị cần bổ sung:</b> {{ application.review_note }}<br>Vui lòng trả lời email hoặc <a href="{% url 'public:feedback' %}">gửi thông tin bổ sung</a>.</p>{% endif %}
+        <p style="margin-top:14px;line-height:1.7">Trong lúc chờ, bạn vẫn xem được toàn bộ thông tin trên trang. Sau khi được duyệt, bạn có thể gửi hồ sơ doanh nhân, doanh nghiệp và đề xuất sửa — mỗi nội dung vẫn được biên tập viên kiểm duyệt trước khi công bố.</p>
+        <div class="row" style="gap:10px;margin-top:14px"><a class="btn btn-outline" href="{% url 'public:contact' %}">Liên hệ ghi hình, phỏng vấn</a><a class="btn btn-gold" href="{% url 'public:home' %}">Về trang chủ</a></div>
+      </div>
+    {% elif user.status == "rejected" %}
+      <div class="card card-lg"><div class="flash flash-error"><b>Đăng ký chưa được chấp thuận.</b> {{ application.review_note }}</div><p style="margin-top:12px">Nếu bạn cho rằng có nhầm lẫn, vui lòng <a href="{% url 'public:feedback' %}">liên hệ ban vận hành</a>.</p></div>
+    {% else %}
+      <div class="grid grid-auto-260">
+        <a class="card card-link" href="{% url 'member:person_create' %}"><b>+ Gửi hồ sơ doanh nhân</b><span class="small muted">Tiểu sử, hành trình khởi nghiệp, dấu mốc, nguồn tham khảo</span></a>
+        <a class="card card-link" href="{% url 'member:company_create' %}"><b>+ Gửi trang doanh nghiệp</b><span class="small muted">Thông tin pháp lý, lịch sử phát triển, sản phẩm, ban lãnh đạo</span></a>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">Bản gửi đang xử lý</h2>
+        {% if open_revisions %}<div class="table-wrap"><table class="table">
+          <thead><tr><th scope="col">Nội dung</th><th scope="col">Loại</th><th scope="col">Trạng thái</th><th scope="col">Cập nhật</th><th scope="col"></th></tr></thead>
+          <tbody>{% for r in open_revisions %}<tr>
+            <td><b>{{ r.title }}</b><span class="small muted">{{ r.get_entity_type_display }}</span>{% if r.state == "needs_info" %}<div class="small" style="color:var(--danger)">Cần bổ sung: {{ r.review_note }}</div>{% endif %}</td>
+            <td>{{ r.get_kind_display }}</td><td><span class="status-pill {{ r.state }}">{{ r.get_state_display }}</span></td><td>{{ r.updated_at|date:"d/m/Y H:i" }}</td>
+            <td style="white-space:nowrap"><a class="btn btn-outline btn-sm" href="{% url 'member:revision_edit' r.pk %}">{% if r.state == "needs_info" %}Bổ sung{% else %}Sửa{% endif %}</a>
+              <form method="post" action="{% url 'member:revision_withdraw' r.pk %}" class="inline-form" data-confirm="Rút bản gửi này? Nội dung sẽ bị xóa.">{% csrf_token %}<button class="btn btn-outline btn-sm" type="submit">Rút</button></form></td>
+          </tr>{% endfor %}</tbody></table></div>
+        {% else %}<p class="muted">Chưa có bản gửi nào đang chờ.</p>{% endif %}
+      </div>
+
+      {% if owned_people or owned_companies %}<div class="card"><h2 class="card-title">Trang bạn quản lý</h2>
+        <ul class="list-plain">{% for p in owned_people %}<li><a href="{{ p.get_absolute_url }}"><b>{{ p.full_name }}</b></a> · <a href="{% url 'member:person_edit' p.slug %}">Cập nhật</a></li>{% endfor %}
+        {% for c in owned_companies %}<li><a href="{{ c.get_absolute_url }}"><b>{{ c.display_name }}</b></a> · <a href="{% url 'member:company_edit' c.slug %}">Cập nhật</a></li>{% endfor %}</ul></div>{% endif %}
+
+      {% if claims %}<div class="card"><h2 class="card-title">Yêu cầu nhận quản lý hồ sơ</h2>
+        <ul class="list-plain">{% for c in claims %}<li><a href="{{ c.person.get_absolute_url }}">{{ c.person.full_name }}</a> <span class="status-pill {{ c.state }}">{{ c.get_state_display }}</span>{% if c.review_note %}<div class="small muted">{{ c.review_note }}</div>{% endif %}</li>{% endfor %}</ul></div>{% endif %}
+
+      <div class="card"><h2 class="card-title">Lịch sử gửi</h2>
+        {% if closed_revisions %}<ul class="list-plain">{% for r in closed_revisions %}<li><a href="{% url 'member:revision_view' r.pk %}"><b>{{ r.title }}</b></a> · {{ r.get_kind_display|lower }} <span class="status-pill {{ r.state }}">{{ r.get_state_display }}</span><div class="small muted">{{ r.reviewed_at|date:"d/m/Y" }}{% if r.review_note %} · {{ r.review_note|truncatechars:120 }}{% endif %}</div></li>{% endfor %}</ul>
+        {% else %}<p class="muted">Chưa có.</p>{% endif %}</div>
+    {% endif %}
+  </div>
+  <aside class="aside">
+    <div class="card"><h2 class="card-title">Viết thế nào cho được duyệt nhanh</h2>
+      <ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.7;color:var(--text-2)">
+        <li>Văn phong trung lập, ngôi thứ ba, không quảng cáo.</li><li>Mỗi con số, giải thưởng có nguồn kiểm chứng.</li>
+        <li>Kể bằng sự kiện cụ thể: năm, nơi, việc đã làm.</li><li>Không đưa thông tin riêng tư của người khác.</li></ul>
+      <a href="{% url 'public:policy_detail' 'quy-che-bien-tap' %}" class="small" style="display:inline-block;margin-top:10px;font-weight:600">Đọc Quy chế biên tập →</a></div>
+    <div class="card card-dark"><h2 class="card-title">Muốn được ghi hình, phỏng vấn?</h2>
+      <p style="font-size:14px;margin-bottom:12px">Ban biên tập có thể đến tận nơi để phỏng vấn và viết bài.</p>
+      <a class="btn btn-gold" href="{% url 'public:contact' %}">Liên hệ phỏng vấn</a></div>
+  </aside>
+</div>
+{% endblock %}

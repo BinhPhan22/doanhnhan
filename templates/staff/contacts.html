@@ -1,0 +1,10 @@
+{% extends "staff/base.html" %}
+{% block title %}Liên hệ, góp ý{% endblock %}
+{% block content %}
+<div class="row between"><h1 class="admin-title">Liên hệ, góp ý</h1><a class="btn btn-outline btn-sm" href="?{% if not request.GET|get:'tat-ca' %}tat-ca=1{% endif %}">{% if request.GET|get:"tat-ca" %}Chỉ chưa xử lý{% else %}Xem tất cả{% endif %}</a></div>
+<div class="card" style="padding:0;margin-top:20px"><div class="table-wrap"><table class="table admin-table">
+  <thead><tr><th>Chủ đề</th><th>Người gửi</th><th>Nội dung</th><th>Gửi lúc</th><th></th></tr></thead>
+  <tbody>{% for m in page %}<tr><td>{{ m.get_topic_display }}{% if m.handled %} <span class="status-pill done">Đã xử lý</span>{% endif %}</td><td><b>{{ m.full_name }}</b><span class="small muted">{{ m.email }}{% if m.organization %} · {{ m.organization }}{% endif %}</span></td><td class="small">{{ m.message|truncatechars:120 }}</td><td class="muted">{{ m.created_at|date:"d/m/Y" }}</td><td><a class="btn btn-dark btn-sm" href="{% url 'staff:contact_detail' m.pk %}">Xem</a></td></tr>
+  {% empty %}<tr><td colspan="5" class="empty-state">Không có liên hệ mới.</td></tr>{% endfor %}</tbody></table></div></div>
+{% paginate page %}
+{% endblock %}

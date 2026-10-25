@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container" style="padding-top:48px;padding-bottom:72px">
+  <div class="modal" style="max-width:{% block width %}520px{% endblock %};margin:0 auto;box-shadow:none;border:1px solid var(--line)">
+    <div class="modal-head"><p class="eyebrow" style="margin:0">Tài khoản doanhnhan.wiki</p><h1>{% block heading %}{% endblock %}</h1></div>
+    <div class="modal-body">{% block box %}{% endblock %}</div>
+  </div>
+</div>
+{% endblock %}

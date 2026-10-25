@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{% if instance %}Đề xuất sửa: {{ instance }}{% elif entity_type == "person" %}Gửi hồ sơ doanh nhân{% else %}Gửi trang doanh nghiệp{% endif %} – doanhnhan.wiki{% endblock %}
+{% block content %}
+{% include "member/_hero.html" with heading=heading %}
+<div class="container layout">
+  <form class="main stack" method="post" enctype="multipart/form-data" style="gap:20px" novalidate>{% csrf_token %}
+    {% if revision.state == "needs_info" %}<div class="flash flash-warning"><b>Ban biên tập cần bổ sung:</b> {{ revision.review_note }}</div>{% endif %}
+    {% if instance %}<p class="note">Bạn đang đề xuất sửa trang <a href="{{ instance.get_absolute_url }}">{{ instance }}</a>. Nội dung hiện tại đã được điền sẵn — chỉ cần sửa phần muốn thay đổi. Bản đề xuất được ban biên tập duyệt trước khi công bố.</p>{% endif %}
+    {% if entity_type == "person" %}{% include "editor/person.html" %}{% else %}{% include "editor/company.html" %}{% endif %}
+    <div class="sticky-actions">
+      <button type="submit" name="action" value="draft" class="btn btn-outline">Lưu nháp</button>
+      <button type="submit" name="action" value="submit" class="btn btn-gold">Gửi duyệt</button>
+    </div>
+  </form>
+  <aside class="aside">
+    {% if checks %}<div class="card card-accent"><h2 class="card-title">Gợi ý tự động</h2>
+      <ul class="list-plain small">{% for c in checks %}<li class="check-{{ c.level }}">{% if c.level == "ok" %}✓{% elif c.level == "warn" %}!{% else %}i{% endif %} {{ c.text }}</li>{% endfor %}</ul>
+      <p class="small muted" style="margin-top:8px">Kiểm tra theo quy tắc (số từ, nguồn, trùng tên) — không thay cho biên tập viên.</p></div>{% endif %}
+    <div class="card"><h2 class="card-title">Viết thế nào cho được duyệt nhanh</h2>
+      <ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.7;color:var(--text-2)">
+        <li>Văn phong trung lập, ngôi thứ ba, không quảng cáo.</li><li>Mỗi con số, giải thưởng có nguồn kiểm chứng.</li>
+        <li>Kể bằng sự kiện cụ thể: năm, nơi, việc đã làm.</li><li>Chú thích nguồn bằng [^1], [^2]… theo thứ tự ở mục Nguồn tham khảo.</li>
+        <li>Không đưa thông tin riêng tư của người khác.</li></ul>
+      <a href="{% url 'public:policy_detail' 'quy-che-bien-tap' %}" class="small" style="display:inline-block;margin-top:10px;font-weight:600">Đọc Quy chế biên tập →</a></div>
+    <div class="card card-dark"><h2 class="card-title">Muốn được ghi hình, phỏng vấn?</h2>
+      <p style="font-size:14px;margin-bottom:12px">Ban biên tập có thể đến tận nơi để phỏng vấn và viết bài.</p>
+      <a class="btn btn-gold" href="{% url 'public:contact' %}">Liên hệ phỏng vấn</a></div>
+  </aside>
+</div>
+{% endblock %}

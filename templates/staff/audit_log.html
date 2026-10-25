@@ -1,0 +1,11 @@
+{% extends "staff/base.html" %}
+{% block title %}Nhật ký hệ thống{% endblock %}
+{% block content %}
+<h1 class="admin-title">Nhật ký hệ thống</h1>
+<p class="muted" style="margin-top:8px">Chỉ ghi thêm, không sửa, không xóa.</p>
+<form class="toolbar" style="margin-top:16px"><div class="field"><label for="q">Tìm</label><input id="q" name="q" value="{{ q }}" class="input" placeholder="Hành động, đối tượng, email"></div><button class="btn btn-outline">Lọc</button></form>
+<div class="card" style="padding:0"><div class="table-wrap"><table class="table admin-table">
+  <thead><tr><th>Thời gian</th><th>Người thực hiện</th><th>Hành động</th><th>Đối tượng</th><th>Chi tiết</th><th>IP</th></tr></thead>
+  <tbody>{% for e in page %}<tr><td class="muted" style="white-space:nowrap">{{ e.created_at|date:"d/m/Y H:i:s" }}</td><td>{{ e.actor.email|default:"hệ thống" }}</td><td><code>{{ e.action }}</code></td><td>{{ e.target_type }} #{{ e.target_id }}<span class="small muted">{{ e.target_label|truncatechars:60 }}</span></td><td class="small">{% if e.detail %}{{ e.detail }}{% endif %}</td><td class="small muted">{{ e.ip|default:"" }}</td></tr>{% empty %}<tr><td colspan="6" class="empty-state">Chưa có.</td></tr>{% endfor %}</tbody></table></div></div>
+{% paginate page %}
+{% endblock %}

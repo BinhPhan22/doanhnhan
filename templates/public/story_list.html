@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static dnw %}
+{% block title %}Story – Câu chuyện & Phóng sự Doanh nhân – doanhnhan.wiki{% endblock %}
+{% block description %}Những bài viết phóng sự, chân dung chuyên sâu và bài học thương trường thực chiến từ các doanh nhân trẻ tiêu biểu Việt Nam.{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="container hero-split" style="align-items:stretch">
+    <div class="grow">
+      <p class="eyebrow">Phóng sự &amp; Ký sự</p>
+      <h1>Câu chuyện doanh nhân</h1>
+      <p class="lead">Góc nhìn đa chiều, câu chuyện người thật việc thật và bài học vượt khó trên hành trình kinh doanh của thế hệ doanh nhân trẻ tiêu biểu Việt Nam.</p>
+    </div>
+    {% if featured %}
+    <a href="{{ featured.get_absolute_url }}" class="featured-story-hero">
+      <div class="featured-story-badge">
+        <span class="chip chip-solid-gold">Bài viết tiêu điểm</span>
+        <span class="featured-story-type">{{ featured.get_story_type_display }}</span>
+      </div>
+      <h2 class="featured-story-title">{{ featured.title }}</h2>
+      <p class="featured-story-summary">{{ featured.summary|default:featured.content_md|truncatewords:28 }}</p>
+      <div class="featured-story-meta">
+        <span>✍️ {{ featured.author_name }} · {{ featured.published_at|date:"d/m/Y" }}</span>
+        <span class="read-more-link">Đọc bài viết →</span>
+      </div>
+    </a>
+    {% endif %}
+  </div>
+</section>
+
+<div class="container section" style="padding-top:32px">
+  <!-- Bộ lọc gọn gàng: Ô tìm kiếm + Dropdown thể loại + Nút tìm kiếm -->
+  <form class="search-bar" action="{% url 'public:story_list' %}" method="get" role="search" style="margin-top:0;margin-bottom:16px;max-width:100%">
+    <label for="story-q" class="sr-only">Tìm bài viết</label>
+    <input id="story-q" name="q" type="search" value="{{ q }}" placeholder="Tìm theo tiêu đề, nhân vật, tác giả...">
+    <label for="story-type" class="sr-only">Thể loại</label>
+    <select id="story-type" name="loai" onchange="this.form.submit()">
+      <option value="">Tất cả thể loại ({% if not story_type %}{{ total_count }}{% else %}Xem hết{% endif %})</option>
+      {% for val, label in story_types %}
+        <option value="{{ val }}"{% if story_type == val %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-gold">Tìm kiếm</button>
+  </form>
+
+  <!-- Trạng thái kết quả & Bỏ lọc -->
+  <div class="row between" style="margin-bottom:24px;font-size:14px;color:var(--muted)">
+    <div>
+      <b style="color:var(--ink)">{{ total_count }}</b> bài viết phù hợp
+      {% if story_type_label %} · Thể loại: <b>{{ story_type_label }}</b>{% endif %}
+      {% if q %} · Từ khóa: <b>"{{ q }}"</b>{% endif %}
+      {% if q or story_type %} · <a href="{% url 'public:story_list' %}" style="color:var(--gold-dark);font-weight:600">✕ Bỏ lọc</a>{% endif %}
+    </div>
+  </div>
+
+  <!-- Danh sách bài viết -->
+  <div class="story-grid">
+    {% for s in page %}
+      {% include "partials/story_card.html" %}
+    {% empty %}
+      <div class="empty-state" style="grid-column: 1 / -1; padding: 48px 16px; text-align: center;">
+        <p style="font-size:18px;font-weight:600;color:var(--ink);margin-bottom:8px">Chưa có bài viết nào phù hợp</p>
+        <p class="muted">Hãy thử tìm với từ khóa khác hoặc bấm <a href="{% url 'public:story_list' %}">Xem tất cả bài viết</a>.</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% paginate page %}
+</div>
+{% endblock %}

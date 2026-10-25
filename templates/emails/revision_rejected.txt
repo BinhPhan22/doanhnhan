@@ -1,0 +1,9 @@
+Chào {{ revision.author.full_name }},
+
+Nội dung “{{ revision.title }}” chưa được duyệt.
+Lý do: {{ note }}
+
+Bạn có thể gửi lại sau khi chỉnh sửa theo Quy chế biên tập: {{ site_url }}/chinh-sach/quy-che-bien-tap/
+
+Trân trọng,
+Ban biên tập doanhnhan.wiki

@@ -1,0 +1,23 @@
+{% extends "staff/base.html" %}
+{% block title %}Người dùng & vai trò{% endblock %}
+{% block content %}
+<h1 class="admin-title">Người dùng &amp; vai trò</h1>
+<div class="grid grid-auto-260" style="margin-top:16px">
+  <div class="card small"><b>Thành viên</b><p class="muted">Gửi hồ sơ, đề xuất sửa — mọi nội dung chờ duyệt.</p></div>
+  <div class="card small"><b>Biên tập viên</b><p class="muted">Duyệt nội dung, duyệt tài khoản thành viên, nhập liệu trực tiếp.</p></div>
+  <div class="card small"><b>Quản trị viên</b><p class="muted">Thêm: vai trò, tài trợ, chính sách, dữ liệu cá nhân, nhật ký. Cấp/thu hồi cần quản trị viên thứ hai xác nhận.</p></div>
+</div>
+{% if requests %}<div class="card" style="margin-top:20px"><h2 class="card-title">Chờ xác nhận thay đổi quyền Quản trị viên</h2>
+  <ul class="list-plain">{% for rq in requests %}<li class="row between"><span><b>{{ rq.target.email }}</b> → {{ rq.get_new_role_display }} · đề nghị bởi {{ rq.requested_by.email }} lúc {{ rq.created_at|date:"d/m/Y H:i" }}</span>
+    <form method="post" action="{% url 'staff:role_request_decide' rq.pk %}" class="inline-form">{% csrf_token %}{% if rq.requested_by_id != user.pk %}<button class="btn btn-dark btn-sm" name="action" value="confirm">Xác nhận</button> {% endif %}<button class="btn btn-outline btn-sm" name="action" value="cancel">Hủy</button></form></li>{% endfor %}</ul></div>{% endif %}
+<form class="toolbar" style="margin-top:20px"><div class="field"><label for="q">Tìm</label><input id="q" name="q" value="{{ q }}" class="input" placeholder="Email, tên"></div>
+  <div class="field"><label for="vt">Vai trò</label><select id="vt" name="vai-tro" class="select"><option value="">Tất cả</option>{% for val, label in roles %}<option value="{{ val }}"{% if role == val %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div><button class="btn btn-outline">Lọc</button></form>
+<div class="card" style="padding:0"><div class="table-wrap"><table class="table admin-table">
+  <thead><tr><th>Người dùng</th><th>Trạng thái</th><th>Vai trò</th><th>Đăng ký</th><th></th></tr></thead>
+  <tbody>{% for u in page %}<tr><td><b>{{ u.full_name }}</b><span class="small muted">{{ u.email }}{% if u.is_locked %} · đang khóa tạm do sai mật khẩu{% endif %}</span></td><td><span class="status-pill {{ u.status }}">{{ u.get_status_display }}</span></td>
+    <td><form method="post" action="{% url 'staff:user_update' u.pk %}" class="row" style="gap:6px;flex-wrap:nowrap">{% csrf_token %}<input type="hidden" name="action" value="role"><select name="role" class="select" style="width:auto"{% if u.pk == user.pk %} disabled{% endif %}>{% for val, label in roles %}<option value="{{ val }}"{% if u.role == val %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>{% if u.pk != user.pk %}<button class="btn btn-outline btn-sm">Đổi</button>{% endif %}</form></td>
+    <td class="muted">{{ u.date_joined|date:"d/m/Y" }}</td>
+    <td>{% if u.pk != user.pk %}<form method="post" action="{% url 'staff:user_update' u.pk %}" class="inline-form">{% csrf_token %}{% if u.status == "suspended" or u.is_locked %}<button class="btn btn-outline btn-sm" name="action" value="activate">Mở khóa</button>{% else %}<button class="btn btn-danger btn-sm" name="action" value="suspend" onclick="return confirm('Khóa tài khoản này?')">Khóa</button>{% endif %}</form>{% endif %}</td></tr>
+  {% endfor %}</tbody></table></div></div>
+{% paginate page %}
+{% endblock %}

@@ -1,0 +1,4 @@
+Các video sau không còn xem được và đã tự ẩn khỏi trang công khai:
+{% for v in videos %}
+- {{ v.title }} — {{ v.url }}
+  Sửa: {{ site_url }}/quan-tri/video/{{ v.pk }}/{% endfor %}

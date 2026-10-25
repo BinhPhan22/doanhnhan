@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Lịch sử sửa đổi – {{ entity }} – doanhnhan.wiki{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px;padding-bottom:56px">
+  <nav class="breadcrumb light" aria-label="Đường dẫn"><a href="{% url 'public:home' %}">Trang chủ</a><span>/</span>{% if kind == "person" %}<a href="{% url 'public:person_list' %}">Doanh nhân</a>{% else %}<a href="{% url 'public:company_list' %}">Doanh nghiệp</a>{% endif %}<span>/</span><a href="{{ entity.get_absolute_url }}">{{ entity }}</a><span>/</span><span>Lịch sử sửa đổi</span></nav>
+  <div class="row between" style="align-items:flex-end;border-bottom:1px solid var(--line-strong)">
+    <h1 class="serif" style="font-size:34px;font-weight:600;padding-bottom:16px">{{ entity }}</h1>
+    <nav class="page-tabs" aria-label="Các mục">
+      <a href="{{ entity.get_absolute_url }}">{% if kind == "person" %}Hồ sơ{% else %}Giới thiệu{% endif %}</a>
+      <a href="" aria-current="page">Lịch sử sửa đổi</a>
+      <a href="{% if kind == 'person' %}{% url 'member:person_edit' entity.slug %}{% else %}{% url 'member:company_edit' entity.slug %}{% endif %}">Đề xuất sửa</a>
+    </nav>
+  </div>
+  <div class="card card-lg" style="margin-top:24px">
+    <p class="muted" style="margin-bottom:16px">Mọi thay đổi trên trang này đều được ban biên tập duyệt trước khi công bố. Danh sách dưới đây ghi lại từng phiên bản: ai đề xuất (vai trò), khi nào và đã được duyệt.</p>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th scope="col">Bản</th><th scope="col">Ngày duyệt</th><th scope="col">Loại</th><th scope="col">Người đề xuất</th><th scope="col">Ghi chú</th></tr></thead>
+      <tbody>{% for r in revisions %}<tr><td><b>#{{ r.revision_no }}</b></td><td>{{ r.reviewed_at|date:"d/m/Y H:i" }}</td><td>{{ r.get_kind_display }}</td><td>{{ r.author_label }}</td><td>{{ r.note|default:"—"|truncatechars:120 }}</td></tr>
+      {% empty %}<tr><td colspan="5" class="muted">Chưa có phiên bản nào được ghi nhận.</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </div>
+</div>
+{% endblock %}

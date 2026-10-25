@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Tài trợ doanhnhan.wiki{% endblock %}
+{% block content %}
+<section class="hero"><div class="container">
+  <p class="eyebrow">Tài trợ doanhnhan.wiki</p>
+  <h1>{{ donation.title }}</h1>
+  {% if donation.lead %}<p class="lead">{{ donation.lead }}</p>{% endif %}
+</div></section>
+<div class="container layout" style="padding-top:40px">
+  <article class="main card card-lg article prose">{{ donation.body_md|md }}</article>
+  <aside class="aside" style="flex:1 1 340px">
+    {% for acc in accounts %}<div class="donate-box">
+      <h2 style="font-size:18px;font-weight:700">Chuyển khoản tài trợ</h2>
+      <p style="font-size:14px;color:var(--muted)">Số tiền tùy tâm — bao nhiêu cũng được.</p>
+      <div class="qr">{% if acc.qr_image %}<img src="{{ acc.qr_image.url }}" alt="Mã QR chuyển khoản tài trợ doanhnhan.wiki – {{ acc.bank_name }}" style="width:100%;max-width:220px">{% else %}<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#0B1A2E" stroke-width="1.4" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3z M20 14v7 M14 20h3"/></svg><span>Chưa có mã QR</span>{% endif %}</div>
+      <dl class="kv">
+        <div><dt>Ngân hàng</dt><dd>{{ acc.bank_name }}</dd></div>
+        <div><dt>Số tài khoản</dt><dd><span id="acc-number-{{ acc.pk }}" class="account-number">{{ acc.account_number }}</span><button type="button" class="btn btn-outline btn-sm" data-copy="#acc-number-{{ acc.pk }}">Sao chép</button></dd></div>
+        <div><dt>Chủ tài khoản</dt><dd>{{ acc.account_holder }}</dd></div>
+        <div class="memo"><dt>Nội dung chuyển khoản</dt><dd><span id="acc-memo-{{ acc.pk }}">{{ donation.memo }}</span><button type="button" class="btn btn-outline btn-sm" data-copy="#acc-memo-{{ acc.pk }}">Sao chép</button></dd></div>
+      </dl>
+      <p class="note" style="font-size:12px">doanhnhan.wiki chỉ nhận tài trợ qua tài khoản được công bố tại trang này.</p>
+    </div>{% empty %}<div class="donate-box"><h2 style="font-size:18px;font-weight:700">Chuyển khoản tài trợ</h2><p class="muted" style="font-size:14px">Thông tin tài khoản nhận tài trợ đang được cập nhật. Vui lòng quay lại sau hoặc <a href="{% url 'public:feedback' %}">liên hệ ban vận hành</a>.</p></div>{% endfor %}
+  </aside>
+</div>
+{% endblock %}

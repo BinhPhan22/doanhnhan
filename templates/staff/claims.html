@@ -1,0 +1,18 @@
+{% extends "staff/base.html" %}
+{% block title %}Nhận quản lý hồ sơ{% endblock %}
+{% block content %}
+<div class="row between"><h1 class="admin-title">Nhận quản lý hồ sơ</h1>
+  <div class="tabs"><a class="tab" aria-selected="{% if state == 'pending' %}true{% else %}false{% endif %}" href="?trang-thai=pending">Chờ duyệt</a><a class="tab" aria-selected="{% if state == 'approved' %}true{% else %}false{% endif %}" href="?trang-thai=approved">Đã duyệt</a><a class="tab" aria-selected="{% if state == 'rejected' %}true{% else %}false{% endif %}" href="?trang-thai=rejected">Từ chối</a></div></div>
+<p class="muted" style="margin-top:8px">Giấy tờ chứng minh lưu ở vùng riêng tư, chỉ tải được từ trang này; mỗi lần mở đều ghi nhật ký.</p>
+<div class="stack" style="gap:12px;margin-top:16px">
+{% for c in claims %}<div class="card row between" style="align-items:flex-start">
+  <div><b><a href="{{ c.person.get_absolute_url }}" target="_blank">{{ c.person.full_name }}</a></b> ← {{ c.user.full_name }} ({{ c.user.email }}) <span class="status-pill {{ c.state }}">{{ c.get_state_display }}</span>
+    <div class="small muted">{{ c.created_at|date:"d/m/Y H:i" }}{% if c.user.application %} · đăng ký: {{ c.user.application.get_applicant_type_display }}{% endif %}</div>
+    {% if c.note %}<p class="small" style="margin-top:6px">{{ c.note }}</p>{% endif %}
+    <p class="small" style="margin-top:6px"><a href="{% url 'staff:claim_evidence' c.pk %}">Tải giấy tờ chứng minh</a></p></div>
+  {% if c.state == "pending" %}<form method="post" action="{% url 'staff:claim_decide' c.pk %}" class="stack" style="gap:8px;min-width:260px">{% csrf_token %}
+    <textarea name="note" class="textarea" rows="2" placeholder="Ghi chú (bắt buộc khi từ chối)"></textarea>
+    <div class="row" style="gap:6px"><button class="btn btn-dark btn-sm" name="action" value="approve">Xác nhận chính chủ</button><button class="btn btn-danger btn-sm" name="action" value="reject">Từ chối</button></div></form>{% endif %}
+</div>{% empty %}<div class="card empty-state">Không có yêu cầu.</div>{% endfor %}
+</div>
+{% endblock %}

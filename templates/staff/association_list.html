@@ -1,0 +1,17 @@
+{% extends "staff/base.html" %}
+{% block title %}Hiệp hội{% endblock %}
+{% block content %}
+<div class="row between"><h1 class="admin-title">Hiệp hội &amp; hội viên</h1><a class="btn btn-dark" href="{% url 'staff:association_new' %}">+ Thêm hiệp hội</a></div>
+<div style="margin-top:20px">{% include "staff/_search.html" with placeholder="Tên hiệp hội…" %}</div>
+<div class="card" style="padding:0"><div class="table-wrap"><table class="table admin-table">
+  <thead><tr><th>Hiệp hội</th><th>Cấp</th><th>Đối tác</th><th>Hội viên</th><th>Chờ xác nhận</th><th>Trạng thái</th><th></th></tr></thead>
+  <tbody>{% for a in associations %}<tr><td><b>{{ a.name }}</b><span class="small muted">{% if a.parent %}thuộc {{ a.parent.short_name|default:a.parent.name }} · {% endif %}{{ a.province.name|default:"" }}</span></td><td>{{ a.get_level_display }}</td><td>{% if a.is_partner %}✓{% else %}—{% endif %}</td><td>{{ a.members }}</td><td>{% if a.pending %}<b style="color:var(--gold-dark)">{{ a.pending }}</b>{% else %}0{% endif %}</td><td><span class="status-pill {{ a.status }}">{{ a.get_status_display }}</span></td>
+    <td style="white-space:nowrap">
+      <a class="btn btn-dark btn-sm" href="{% url 'staff:association_members' a.pk %}">Hội viên</a>
+      <a class="btn btn-outline btn-sm" href="{% url 'staff:association_edit' a.pk %}">Sửa</a>
+      <a class="btn btn-outline btn-sm" href="{{ a.get_absolute_url }}" target="_blank">Xem</a>
+      <form method="post" action="{% url 'staff:association_toggle_status' a.pk %}" style="display:inline">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-outline btn-sm" type="submit">{% if a.status == 'archived' %}Bỏ ẩn{% else %}Ẩn{% endif %}</button></form>
+      <form method="post" action="{% url 'staff:association_delete' a.pk %}" style="display:inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn hiệp hội {{ a.name|escapejs }}?')">{% csrf_token %}<button class="btn btn-danger btn-sm" type="submit">Xóa</button></form>
+    </td></tr>
+  {% empty %}<tr><td colspan="7" class="empty-state">Chưa có hiệp hội.</td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

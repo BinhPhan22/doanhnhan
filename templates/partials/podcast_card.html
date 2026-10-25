@@ -1,0 +1,65 @@
+<article class="podcast-episode-card" style="display:flex;flex-direction:column;position:relative;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.04);transition:all 0.25s ease">
+  <!-- Media Thumbnail -->
+  <div class="card-media-wrap" style="position:relative;width:100%;aspect-ratio:16/9;background:#0B1A2E;overflow:hidden">
+    <a href="{{ p.get_absolute_url }}" style="display:block;width:100%;height:100%">
+      {% if p.cover_image %}
+        <img src="{{ p.cover_image.url }}" alt="{{ p.title }}" loading="lazy" style="width:100%;height:100%;object-fit:cover">
+      {% else %}
+        <div class="card-media-placeholder" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--gold);background:radial-gradient(circle, #162a45 0%, #0B1A2E 100%)">
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+        </div>
+      {% endif %}
+    </a>
+
+    {% if p.episode_number %}
+      <span class="badge-ep-overlay" style="position:absolute;top:10px;left:10px;background:rgba(11,26,46,0.85);backdrop-filter:blur(4px);color:var(--gold-light);font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;border:1px solid rgba(212,175,55,0.35)">
+        TẬP {{ p.episode_number }}
+      </span>
+    {% endif %}
+
+    <div class="like-badge-overlay">
+      <button type="button" class="btn-like-heart" data-like-btn data-type="podcast" data-id="{{ p.id }}" data-count="{{ p.likes_count|default:0 }}" title="Thả tim podcast">
+        <svg class="heart-icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span class="like-count" data-like-count>{{ p.likes_count|default:0 }}</span>
+      </button>
+    </div>
+
+    <span class="badge-duration-overlay" style="position:absolute;bottom:8px;left:10px;background:rgba(11,26,46,0.85);backdrop-filter:blur(4px);color:#FFFFFF;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px">
+      ⏱️ {{ p.duration_minutes }} phút
+    </span>
+  </div>
+
+  <!-- Body -->
+  <div class="card-body-content" style="padding:16px;display:flex;flex-direction:column;flex:1">
+    <div class="card-category-date" style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);margin-bottom:8px">
+      <span class="category-name-gold" style="color:var(--gold-dark);font-weight:700;letter-spacing:0.3px">{{ p.get_series_type_display }}</span>
+      <span>·</span>
+      <span>{{ p.published_at|date:"d/m/Y" }}</span>
+      {% if p.views_count %}
+        <span>·</span>
+        <span>🎧 {{ p.views_count }}</span>
+      {% endif %}
+    </div>
+
+    <h3 class="card-ep-heading" style="font-size:15.5px;font-weight:700;line-height:1.4;margin:0 0 8px;flex:1">
+      <a href="{{ p.get_absolute_url }}" style="color:var(--ink);text-decoration:none">{{ p.title }}</a>
+    </h3>
+
+    <div class="card-guest-row" style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-bottom:12px">
+      <span>🎙️</span>
+      <span style="color:var(--ink);font-weight:500">{{ p.display_guest_name|truncatechars:26 }}</span>
+      {% if p.company %}
+        <span>·</span>
+        <span class="muted">{{ p.company.display_name|truncatechars:18 }}</span>
+      {% endif %}
+    </div>
+
+    <div class="card-footer-actions" style="margin-top:auto;padding-top:10px;border-top:1px solid #F1F5F9;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:12px;color:var(--muted)">Series: {{ p.series_name|default:"Đối thoại"|truncatechars:18 }}</span>
+      <a href="{{ p.get_absolute_url }}" class="btn btn-sm btn-outline" style="padding:4px 10px;font-size:12px;border-radius:6px;font-weight:600;display:inline-flex;align-items:center;gap:4px">
+        <span>Nghe tập</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      </a>
+    </div>
+  </div>
+</article>

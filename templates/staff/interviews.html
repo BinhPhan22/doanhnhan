@@ -1,0 +1,11 @@
+{% extends "staff/base.html" %}
+{% block title %}Yêu cầu phỏng vấn{% endblock %}
+{% block content %}
+<div class="row between"><h1 class="admin-title">Yêu cầu ghi hình, phỏng vấn</h1>
+  <form><select name="trang-thai" class="select" style="width:auto" onchange="this.form.submit()"><option value="">Tất cả trạng thái</option>{% for val, label in states %}<option value="{{ val }}"{% if state == val %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></form></div>
+<div class="card" style="padding:0;margin-top:20px"><div class="table-wrap"><table class="table admin-table">
+  <thead><tr><th>Người liên hệ</th><th>Doanh nghiệp</th><th>Nội dung</th><th>Trạng thái</th><th>Phụ trách</th><th>Gửi lúc</th><th></th></tr></thead>
+  <tbody>{% for r in page %}<tr><td><b>{{ r.full_name }}</b><span class="small muted">{{ r.phone }} · {{ r.email }}</span></td><td>{{ r.company }}</td><td>{{ r.get_kind_display }}<span class="small muted">{{ r.get_format_display }}{% if r.address %} · {{ r.address }}{% endif %}</span></td><td><span class="status-pill {{ r.state }}">{{ r.get_state_display }}</span></td><td>{{ r.assignee.full_name|default:"—" }}</td><td class="muted">{{ r.created_at|date:"d/m/Y" }}</td><td><a class="btn btn-dark btn-sm" href="{% url 'staff:interview_detail' r.pk %}">Xử lý</a></td></tr>
+  {% empty %}<tr><td colspan="7" class="empty-state">Chưa có yêu cầu.</td></tr>{% endfor %}</tbody></table></div></div>
+{% paginate page %}
+{% endblock %}

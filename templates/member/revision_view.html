@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Bản gửi: {{ revision.title }} – doanhnhan.wiki{% endblock %}
+{% block content %}
+{% include "member/_hero.html" with heading=revision.title %}
+<div class="container section section-last" style="max-width:960px">
+  <div class="card card-lg stack" style="gap:16px">
+    <div class="row between"><div><b>{{ revision.get_kind_display }}</b> · {{ revision.get_entity_type_display }} · gửi {{ revision.created_at|date:"d/m/Y H:i" }}</div><span class="status-pill {{ revision.state }}">{{ revision.get_state_display }}</span></div>
+    {% if revision.review_note %}<div class="note"><b>Ghi chú của ban biên tập:</b> {{ revision.review_note }}</div>{% endif %}
+    {% if revision.state == "approved" and revision.target %}<p><a href="{{ revision.target.get_absolute_url }}">Xem trang đã công bố →</a></p>{% endif %}
+    <h2 class="card-title">Nội dung thay đổi</h2>
+    {% include "partials/diff.html" %}
+  </div>
+</div>
+{% endblock %}

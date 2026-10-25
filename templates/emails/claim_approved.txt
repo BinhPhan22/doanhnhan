@@ -1,0 +1,7 @@
+Chào {{ claim.user.full_name }},
+
+Ban biên tập đã xác nhận bạn là chính chủ hồ sơ “{{ claim.person.full_name }}”. Từ nay các đề xuất sửa của bạn được ghi nhận là của chính chủ.
+Hồ sơ: {{ site_url }}{{ claim.person.get_absolute_url }}
+
+Trân trọng,
+Ban biên tập doanhnhan.wiki

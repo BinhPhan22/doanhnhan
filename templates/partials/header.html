@@ -1,0 +1,180 @@
+<header class="site-header">
+  <div class="container header-container">
+    <a class="logo" href="{% url 'public:home' %}">doanhnhan<span>.wiki</span></a>
+
+    <!-- Desktop Navigation (Ẩn trên màn hình mobile <= 960px) -->
+    <nav id="main-nav" class="nav desktop-nav" aria-label="Điều hướng chính">
+      {% for key, label, urlname in NAV %}
+        <a href="{% url urlname %}"{% if nav_section == key %} aria-current="page"{% endif %}>{{ label }}</a>
+      {% endfor %}
+      <a href="{% url 'public:donate' %}" class="nav-donate"{% if nav_section == 'donate' %} aria-current="page"{% endif %}>Donate</a>
+    </nav>
+
+    <!-- Desktop Actions (Ẩn trên màn hình mobile <= 960px) -->
+    <div class="header-actions desktop-actions">
+      <a href="{% url 'public:search' %}" class="header-btn header-btn-search" title="Tìm kiếm (phím tắt: ⌘K hoặc Ctrl+K)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span class="search-text">Tìm kiếm</span>
+        <kbd class="search-kbd">⌘K</kbd>
+      </a>
+      {% if user.is_authenticated %}
+        {% if user.is_editor %}
+        <a class="header-btn header-btn-staff" href="{% url 'staff:dashboard' %}">
+          <span>Quản trị</span>{% if staff_counts.revisions %}<span class="header-badge">{{ staff_counts.revisions }}</span>{% endif %}
+        </a>
+        {% endif %}
+        <a class="header-btn header-btn-user" href="{% url 'member:dashboard' %}" title="{{ user.full_name|default:user.email }}">
+          <span>Tài khoản</span>
+        </a>
+        <form method="post" action="{% url 'accounts:logout' %}" class="inline-form header-logout-form">{% csrf_token %}
+          <button class="header-btn header-btn-logout" type="submit" title="Đăng xuất khỏi hệ thống">
+            <span>Thoát</span>
+          </button>
+        </form>
+      {% else %}
+        <a class="header-btn header-btn-ghost" href="{% url 'accounts:signup' %}">Đăng ký</a>
+        <a class="header-btn header-btn-primary" href="{% url 'accounts:login' %}">Đăng nhập</a>
+      {% endif %}
+    </div>
+
+    <!-- Mobile Header Tools (Hiển thị cố định trên Mobile <= 960px) -->
+    <div class="mobile-header-tools">
+      <a href="{% url 'public:search' %}" class="mobile-tool-btn" aria-label="Tìm kiếm nhanh">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </a>
+      <button class="menu-toggle" type="button" aria-controls="mobile-nav-drawer" aria-expanded="false" aria-label="Mở danh mục menu">
+        <span class="hamburger-box">
+          <span class="hamburger-bar"></span>
+          <span class="hamburger-bar"></span>
+          <span class="hamburger-bar"></span>
+        </span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Mobile Drawer Overlay (Độc lập ngoài site-header, đảm bảo thứ tự layer chính xác) -->
+<div id="mobile-nav-drawer" class="mobile-drawer" aria-hidden="true">
+    <div class="mobile-drawer-inner">
+      <!-- 1. Thanh tìm kiếm nhanh dạng Form trực tiếp -->
+      <form action="{% url 'public:search' %}" method="get" class="mobile-search-form">
+        <div class="mobile-search-bar">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="search" name="q" placeholder="Tìm doanh nhân, doanh nghiệp, ngành..." aria-label="Tìm kiếm" autocomplete="off">
+          <button type="submit" class="mobile-search-submit" aria-label="Tìm kiếm">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </form>
+
+      <!-- 2. Khu vực Người dùng / Đăng nhập / Đăng ký -->
+      <div class="mobile-auth-card">
+        {% if user.is_authenticated %}
+          <div class="mobile-user-profile">
+            <div class="mobile-user-avatar">
+              {{ user.full_name|default:user.email|slice:":1"|upper }}
+            </div>
+            <div class="mobile-user-meta">
+              <div class="mobile-user-name">{{ user.full_name|default:user.email }}</div>
+              <div class="mobile-user-role">
+                {% if user.is_superuser %}Quản trị tối cao
+                {% elif user.is_editor %}Biên tập viên
+                {% else %}Thành viên cộng đồng{% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="mobile-account-actions">
+            {% if user.is_editor %}
+              <a href="{% url 'staff:dashboard' %}" class="mobile-acc-btn staff">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                <span>Bàn làm việc Quản trị</span>
+                {% if staff_counts.revisions %}<span class="mobile-badge">{{ staff_counts.revisions }}</span>{% endif %}
+              </a>
+            {% endif %}
+            <a href="{% url 'member:dashboard' %}" class="mobile-acc-btn member">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Trang cá nhân & Đóng góp</span>
+            </a>
+            <form method="post" action="{% url 'accounts:logout' %}" class="mobile-logout-form">{% csrf_token %}
+              <button type="submit" class="mobile-acc-btn logout">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span>Đăng xuất</span>
+              </button>
+            </form>
+          </div>
+        {% else %}
+          <div class="mobile-guest-actions">
+            <a href="{% url 'accounts:login' %}" class="mobile-btn-gold">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+              <span>Đăng nhập hệ thống</span>
+            </a>
+            <a href="{% url 'accounts:signup' %}" class="mobile-btn-outline">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+              <span>Tạo tài khoản thành viên</span>
+            </a>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- 3. Danh mục Menu chính với Icon + Phân cấp trực quan -->
+      <div class="mobile-nav-block">
+        <div class="mobile-nav-title">DANH MỤC TRA CỨU</div>
+        <nav class="mobile-nav-menu" aria-label="Menu tra cứu di động">
+          {% for key, label, urlname in NAV %}
+            <a href="{% url urlname %}" class="mobile-nav-item{% if nav_section == key %} is-active{% endif %}">
+              <span class="nav-item-icon">
+                {% if key == 'persons' %}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                {% elif key == 'companies' %}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/></svg>
+                {% elif key == 'stories' %}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 7h8M8 11h6"/></svg>
+                {% elif key == 'sectors' %}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+                {% elif key == 'associations' %}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                {% elif key == 'events' %}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                {% elif key == 'videos' %}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                {% elif key == 'podcasts' %}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+                {% elif key == 'postcards' %}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                {% else %}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                {% endif %}
+              </span>
+              <span class="nav-item-label">{{ label }}</span>
+              <span class="nav-item-chevron">›</span>
+            </a>
+          {% endfor %}
+          <a href="{% url 'public:donate' %}" class="mobile-nav-item donate-item{% if nav_section == 'donate' %} is-active{% endif %}">
+            <span class="nav-item-icon donate-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </span>
+            <span class="nav-item-label">Đồng hành & Tài trợ</span>
+            <span class="donate-pill">Ủng hộ</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- 4. Chân trang Drawer -->
+      <div class="mobile-drawer-bottom">
+        <div class="mobile-quick-links">
+          <a href="{% url 'public:about' %}">Giới thiệu</a>
+          <span class="dot">·</span>
+          <a href="{% url 'public:contact' %}">Liên hệ</a>
+          <span class="dot">·</span>
+          <a href="{% url 'public:policy_detail' 'quy-che-bien-tap' %}">Quy chế</a>
+          <span class="dot">·</span>
+          <a href="{% url 'public:policy_detail' 'dieu-khoan' %}">Điều khoản</a>
+        </div>
+        <div class="mobile-copyright">
+          doanhnhan.wiki · Bách khoa toàn thư Doanh nhân trẻ
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

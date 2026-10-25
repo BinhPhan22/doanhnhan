@@ -1,0 +1,335 @@
+<datalist id="ds-person"></datalist>
+<div class="card form-section">
+  <h2>1. Thông tin pháp lý</h2>
+  <div class="form-grid">
+    <div class="field full"><label for="c-legal">Tên theo đăng ký kinh doanh <span class="required">*</span></label><input id="c-legal" name="legal_name" class="input" required value="{{ data.legal_name|default:'' }}">{% if errors.legal_name %}<p class="field-error">{{ errors.legal_name }}</p>{% endif %}</div>
+    <div class="field"><label for="c-brand">Tên thương hiệu</label><input id="c-brand" name="brand_name" class="input" value="{{ data.brand_name|default:'' }}"></div>
+    <div class="field">
+      <label for="c-mst">Mã số thuế <span class="required">*</span></label>
+      {% if instance and instance.tax_code %}
+      <input id="c-mst" name="tax_code" class="input" readonly style="background:var(--bg-subtle, #f1f5f9);cursor:not-allowed;" value="{{ instance.tax_code }}">
+      <p class="hint" style="color:var(--text-muted);display:flex;align-items:center;gap:4px;margin-top:4px"><span style="font-size:13px">🔒</span> <span>Mã số thuế là định danh pháp lý duy nhất, không thể thay đổi sau khi tạo.</span></p>
+      {% else %}
+      <input id="c-mst" name="tax_code" class="input" inputmode="numeric" required placeholder="10 chữ số (hoặc -xxx chi nhánh)" value="{{ data.tax_code|default:'' }}">
+      {% if errors.tax_code %}<p class="field-error">{{ errors.tax_code }}</p>{% endif %}
+      <p class="hint">Bắt buộc nhập. Đối chiếu tại <a href="https://dangkykinhdoanh.gov.vn" target="_blank" rel="noopener">Cổng thông tin quốc gia về đăng ký doanh nghiệp</a>.</p>
+      {% endif %}
+    </div>
+    <div class="field"><label for="c-nam">Năm thành lập</label><input id="c-nam" name="founded_year" class="input" inputmode="numeric" placeholder="yyyy" value="{{ data.founded_year|default_if_none:'' }}">{% if errors.founded_year %}<p class="field-error">{{ errors.founded_year }}</p>{% endif %}</div>
+    <div class="field"><label for="c-tinh">Trụ sở (tỉnh / thành)</label><select id="c-tinh" name="province" class="select"><option value="">— Chọn tỉnh / thành —</option>{% for pr in provinces %}<option value="{{ pr.pk }}"{% if data.province == pr.pk %} selected{% endif %}>{{ pr.name }}</option>{% endfor %}</select></div>
+    <div class="field full"><label for="c-dc">Địa chỉ</label><input id="c-dc" name="address" class="input" value="{{ data.address|default:'' }}"></div>
+    <div class="field"><label for="c-qm">Quy mô nhân sự</label><select id="c-qm" name="size_band" class="select"><option value="">— Chọn —</option>{% for val, lbl in size_choices %}<option value="{{ val }}"{% if data.size_band == val %} selected{% endif %}>{{ lbl }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="c-web">Website</label><input id="c-web" name="website" class="input" type="url" placeholder="https://" value="{{ data.website|default:'' }}">{% if errors.website %}<p class="field-error">{{ errors.website }}</p>{% endif %}</div>
+  </div>
+  {% include "editor/image.html" with field="logo" label="Logo · PNG nền trong suốt hoặc JPG/WEBP, tối đa 5 MB" path=data.logo %}
+  {% include "editor/image.html" with field="cover" label="Ảnh trụ sở / sản phẩm · ảnh ngang, tối đa 5 MB" path=data.cover %}
+</div>
+
+<div class="card form-section" id="section-sectors">
+  <div class="row between" style="align-items:center;flex-wrap:wrap;gap:8px">
+    <h2 style="margin:0">2. Ngành nghề</h2>
+    {% if staff %}
+    <button type="button" class="btn btn-outline btn-sm" id="btn-quick-sector" style="display:inline-flex;align-items:center;gap:6px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      Thêm ngành nghề mới
+    </button>
+    {% endif %}
+  </div>
+  <div class="form-grid">
+    <div class="field"><label for="c-nganh">Ngành chính</label><select id="c-nganh" name="primary_sector" class="select"><option value="">— Chọn ngành —</option>{% for s in sector_options %}<option value="{{ s.pk }}"{% if data.primary_sector == s.pk %} selected{% endif %}>{{ s }}</option>{% endfor %}</select></div>
+    <fieldset class="field full" style="border:0;margin:0;padding:0"><legend class="label" style="margin-bottom:8px">Ngành, phân ngành khác</legend>
+      <div id="c-sectors-wrap" class="row" style="gap:8px 18px">{% for s in sector_options %}<label class="check" data-sector-id="{{ s.pk }}"><input type="checkbox" name="sectors" value="{{ s.pk }}"{% if s.pk in data.sectors %} checked{% endif %}> {{ s }}</label>{% endfor %}</div></fieldset>
+  </div>
+</div>
+
+<div class="card form-section">
+  <h2>3. Bài viết chi tiết về doanh nghiệp</h2>
+  <p class="hint">Văn phong trung lập, không quảng cáo. Số liệu chỉ đưa khi đã công bố công khai và có nguồn.</p>
+  {% for s in sections_def %}{% include "editor/section.html" with key=s.key label=s.label hint=s.hint help=s.help rows=s.rows value=data.sections|get:s.key %}{% endfor %}
+</div>
+
+<div class="card form-section">
+  <h2>4. Ban lãnh đạo</h2>
+  <p class="hint">Gõ tên rồi chọn trong gợi ý để liên kết với hồ sơ doanh nhân có sẵn. Người chưa có hồ sơ sẽ được tạo bản nháp.</p>
+  <div id="ld-list" class="stack" style="gap:10px">
+    {% for l in data.leaders|default:blank_rows %}<div class="repeat-row" data-repeat-row style="grid-template-columns:minmax(0,2fr) 190px minmax(0,1fr) 90px 110px auto">
+      <div class="field"><label>Họ và tên</label><input name="leader_name" class="input" list="ds-person" data-suggest="person" autocomplete="off" value="{{ l.person_name|default:'' }}"></div>
+      <div class="field"><label>Vai trò</label><select name="leader_role" class="select">{% for val, lbl in role_choices %}<option value="{{ val }}"{% if l.role == val %} selected{% endif %}>{{ lbl }}</option>{% endfor %}</select></div>
+      <div class="field"><label>Chức danh</label><input name="leader_title" class="input" value="{{ l.title|default:'' }}"></div>
+      <div class="field"><label>Từ năm</label><input name="leader_start" class="input" inputmode="numeric" value="{{ l.start_year|default_if_none:'' }}"></div>
+      <div class="field"><label>DN chính của họ</label><select name="leader_primary" class="select"><option value="0">Không</option><option value="1"{% if l.is_primary %} selected{% endif %}>Có</option></select></div>
+      {% include "editor/_row_actions.html" %}
+    </div>{% endfor %}
+  </div>
+  <button type="button" class="chip chip-lg chip-dashed" style="align-self:flex-start" data-repeat-add="#ld-list">+ Thêm người</button>
+</div>
+
+<div class="card form-section">
+  <h2>5. Sản phẩm tiêu biểu</h2>
+  <div id="sp-list" class="stack" style="gap:10px">
+    {% for pr in data.products|default:blank_rows %}<div class="repeat-row" data-repeat-row style="grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto">
+      <div class="field"><label>Sản phẩm / dịch vụ</label><input name="product_name" class="input" value="{{ pr.name|default:'' }}"></div>
+      <div class="field"><label>Mô tả ngắn</label><input name="product_description" class="input" placeholder="1–2 câu" value="{{ pr.description|default:'' }}"></div>
+      {% include "editor/_row_actions.html" %}
+    </div>{% endfor %}
+  </div>
+  <button type="button" class="chip chip-lg chip-dashed" style="align-self:flex-start" data-repeat-add="#sp-list">+ Thêm sản phẩm</button>
+</div>
+
+{% if staff and available_badges %}
+<div class="card form-section">
+  <h2>Huy hiệu &amp; Giải thưởng danh dự</h2>
+  <p class="hint">Tôn vinh giải thưởng cho doanh nghiệp (Sao Vàng Đất Việt, Top 500 VNR, Doanh nghiệp tiêu biểu, Huân chương...). Huy hiệu sẽ hiển thị trực tiếp trên thẻ danh mục và trang hồ sơ doanh nghiệp.</p>
+  <div id="c-award-list" class="stack" style="gap:10px">
+    {% for a in data.awards|default:blank_rows %}
+    <div class="repeat-row" data-repeat-row style="grid-template-columns:minmax(0,1.8fr) 100px minmax(0,1.2fr) minmax(0,1.5fr) auto">
+      <div class="field">
+        <label>Giải thưởng / Huy hiệu</label>
+        <select name="award_badge_id" class="select">
+          <option value="">— Chọn giải thưởng —</option>
+          {% for b in available_badges %}
+            <option value="{{ b.pk }}"{% if a.badge_id == b.pk %} selected{% endif %}>{{ b.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Năm trao</label>
+        <input name="award_year" class="input" inputmode="numeric" placeholder="yyyy" value="{{ a.year|default_if_none:'' }}">
+      </div>
+      <div class="field">
+        <label>Danh hiệu / Chi tiết</label>
+        <input name="award_title" class="input" placeholder="Ví dụ: Top 10, Top 100..." value="{{ a.title|default:'' }}">
+      </div>
+      <div class="field">
+        <label>Quyết định / Ghi chú</label>
+        <input name="award_citation" class="input" placeholder="Ví dụ: QĐ 123/QĐ-DNT..." value="{{ a.citation|default:'' }}">
+      </div>
+      {% include "editor/_row_actions.html" %}
+    </div>
+    {% endfor %}
+  </div>
+  <button type="button" class="chip chip-lg chip-dashed" style="align-self:flex-start" data-repeat-add="#c-award-list">+ Thêm giải thưởng</button>
+</div>
+{% endif %}
+
+{% include "editor/common_tail.html" with p="c" n_milestones=6 n_videos=7 n_sources=8 %}
+
+{% if staff %}
+<!-- Modal thêm nhanh ngành nghề mới -->
+<dialog id="modal-quick-sector" style="border:0;border-radius:12px;padding:0;max-width:520px;width:95vw;box-shadow:0 24px 60px rgba(11,26,46,0.35);margin:auto">
+  <div style="background:var(--navy);color:#fff;padding:16px 20px;border-top-left-radius:12px;border-top-right-radius:12px" class="row between">
+    <div style="font-weight:700;font-size:16px;display:flex;align-items:center;gap:8px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold-light)" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Thêm nhanh ngành nghề mới
+    </div>
+    <button type="button" id="btn-close-quick-sector" style="background:none;border:0;color:#C9D1D8;font-size:24px;cursor:pointer;line-height:1;padding:0 4px">&times;</button>
+  </div>
+  <form id="form-quick-sector" style="padding:20px;background:#fff;border-bottom-left-radius:12px;border-bottom-right-radius:12px;display:flex;flex-direction:column;gap:14px">
+    {% csrf_token %}
+    <div id="quick-sector-error" class="flash flash-error" style="display:none;padding:10px 14px;font-size:13px"></div>
+    <div class="field">
+      <label for="qs-name">Tên ngành / phân ngành <span class="required">*</span></label>
+      <input id="qs-name" name="name" class="input" placeholder="Ví dụ: Bán dẫn, Trí tuệ nhân tạo (AI), Năng lượng tái tạo..." required autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="qs-parent">Thuộc ngành cấp trên</label>
+      <select id="qs-parent" name="parent_id" class="select">
+        <option value="">— Là ngành cấp 1 (mới hoàn toàn) —</option>
+        {% for s in sector_options %}
+          {% if not s.parent_id %}
+            <option value="{{ s.pk }}">{{ s.name }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+      <p class="hint" style="margin-top:2px">Để trống nếu muốn tạo ngành cấp 1 độc lập. Hoặc chọn ngành cấp 1 để tạo phân ngành trực thuộc.</p>
+    </div>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field">
+        <label for="qs-vsic">Mã VSIC (tùy chọn)</label>
+        <input id="qs-vsic" name="vsic_code" class="input" placeholder="Ví dụ: 62">
+      </div>
+      <div class="field" id="qs-icon-field">
+        <label for="qs-icon">Biểu tượng (cấp 1)</label>
+        <select id="qs-icon" name="icon" class="select">
+          <option value="tech">Công nghệ / Kỹ thuật</option>
+          <option value="factory">Sản xuất / Công nghiệp</option>
+          <option value="retail">Bán lẻ / Tiêu dùng</option>
+          <option value="food">Thực phẩm / F&B</option>
+          <option value="building">Bất động sản / Xây dựng</option>
+          <option value="education">Giáo dục / Đào tạo</option>
+          <option value="agri">Nông nghiệp / Thủy sản</option>
+          <option value="logistics">Vận tải / Logistics</option>
+          <option value="finance">Tài chính / Ngân hàng</option>
+          <option value="health">Y tế / Dược phẩm</option>
+          <option value="creative">Truyền thông / Sáng tạo</option>
+          <option value="travel">Du lịch / Khách sạn</option>
+        </select>
+      </div>
+    </div>
+    <div style="background:var(--ivory);padding:12px 14px;border-radius:8px;border:1px solid var(--line-soft);display:flex;flex-direction:column;gap:8px">
+      <label class="check" style="font-size:13px">
+        <input type="checkbox" id="qs-set-primary" checked> Chọn làm <b>Ngành chính</b> của doanh nghiệp này
+      </label>
+      <label class="check" style="font-size:13px">
+        <input type="checkbox" id="qs-set-other" checked> Đồng thời tích vào danh sách <b>Ngành khác</b>
+      </label>
+    </div>
+    <div class="row" style="justify-content:flex-end;gap:10px;margin-top:8px">
+      <button type="button" class="btn btn-outline" id="btn-cancel-quick-sector">Hủy</button>
+      <button type="submit" class="btn btn-gold" id="btn-submit-quick-sector" style="min-width:130px">Tạo ngành nghề</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(function() {
+  const modal = document.getElementById('modal-quick-sector');
+  const btnOpen = document.getElementById('btn-quick-sector');
+  const btnClose = document.getElementById('btn-close-quick-sector');
+  const btnCancel = document.getElementById('btn-cancel-quick-sector');
+  const form = document.getElementById('form-quick-sector');
+  const errBox = document.getElementById('quick-sector-error');
+  const parentSelect = document.getElementById('qs-parent');
+  const iconField = document.getElementById('qs-icon-field');
+  const btnSubmit = document.getElementById('btn-submit-quick-sector');
+
+  if (!modal || !btnOpen || !form) return;
+
+  const openModal = () => {
+    errBox.style.display = 'none';
+    errBox.textContent = '';
+    form.reset();
+    document.getElementById('qs-set-primary').checked = true;
+    document.getElementById('qs-set-other').checked = true;
+    toggleIconField();
+    modal.showModal();
+    setTimeout(() => document.getElementById('qs-name')?.focus(), 50);
+  };
+
+  const closeModal = () => {
+    modal.close();
+  };
+
+  const toggleIconField = () => {
+    if (iconField) {
+      iconField.style.display = parentSelect.value ? 'none' : 'flex';
+    }
+  };
+
+  parentSelect?.addEventListener('change', toggleIconField);
+  btnOpen.addEventListener('click', openModal);
+  btnClose?.addEventListener('click', closeModal);
+  btnCancel?.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errBox.style.display = 'none';
+    errBox.textContent = '';
+
+    const name = document.getElementById('qs-name').value.trim();
+    if (!name) {
+      errBox.textContent = 'Vui lòng nhập tên ngành nghề.';
+      errBox.style.display = 'block';
+      return;
+    }
+
+    const parentId = parentSelect.value;
+    const vsicCode = document.getElementById('qs-vsic').value.trim();
+    const icon = document.getElementById('qs-icon').value;
+    const setPrimary = document.getElementById('qs-set-primary').checked;
+    const setOther = document.getElementById('qs-set-other').checked;
+
+    btnSubmit.disabled = true;
+    btnSubmit.textContent = 'Đang lưu...';
+
+    const csrfToken = form.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
+    try {
+      const resp = await fetch("{% url 'staff:api_sector_quick_add' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify({
+          name: name,
+          parent_id: parentId,
+          vsic_code: vsicCode,
+          icon: icon,
+        }),
+      });
+
+      const res = await resp.json();
+      if (!resp.ok || !res.ok) {
+        throw new Error(res.error || 'Có lỗi xảy ra khi tạo ngành nghề.');
+      }
+
+      const sector = res.sector;
+
+      // 1. Thêm vào dropdown Ngành chính (#c-nganh) nếu chưa có
+      const primarySelect = document.getElementById('c-nganh');
+      if (primarySelect) {
+        let opt = primarySelect.querySelector(`option[value="${sector.id}"]`);
+        if (!opt) {
+          opt = document.createElement('option');
+          opt.value = sector.id;
+          opt.textContent = sector.text;
+          primarySelect.appendChild(opt);
+        }
+        if (setPrimary) {
+          primarySelect.value = String(sector.id);
+        }
+      }
+
+      // 2. Thêm vào danh sách checkbox Ngành khác (#c-sectors-wrap) nếu chưa có
+      const wrap = document.getElementById('c-sectors-wrap');
+      if (wrap) {
+        let label = wrap.querySelector(`label[data-sector-id="${sector.id}"]`);
+        if (!label) {
+          label = document.createElement('label');
+          label.className = 'check';
+          label.dataset.sectorId = sector.id;
+          label.innerHTML = `
+            <input type="checkbox" name="sectors" value="${sector.id}" ${setOther ? 'checked' : ''}>
+            ${sector.text}
+          `;
+          wrap.appendChild(label);
+        } else if (setOther) {
+          const cb = label.querySelector('input[type=checkbox]');
+          if (cb) cb.checked = true;
+        }
+      }
+
+      // 3. Nếu là ngành cấp 1 mới, thêm vào danh sách ngành cha trong modal
+      if (sector.is_root && parentSelect) {
+        let pOpt = parentSelect.querySelector(`option[value="${sector.id}"]`);
+        if (!pOpt) {
+          pOpt = document.createElement('option');
+          pOpt.value = sector.id;
+          pOpt.textContent = sector.name;
+          parentSelect.appendChild(pOpt);
+        }
+      }
+
+      // 4. Đóng modal và hiển thị thông báo thành công
+      closeModal();
+      if (typeof window.showToast === 'function') {
+        window.showToast(res.message || `Đã thêm thành công: ${sector.name}`, 'success');
+      } else {
+        alert(res.message || `Đã thêm thành công: ${sector.name}`);
+      }
+
+    } catch (err) {
+      errBox.textContent = err.message || 'Không thể tạo ngành nghề.';
+      errBox.style.display = 'block';
+    } finally {
+      btnSubmit.disabled = false;
+      btnSubmit.textContent = 'Tạo ngành nghề';
+    }
+  });
+})();
+</script>
+{% endif %}

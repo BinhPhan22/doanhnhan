@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ association.name }} – doanhnhan.wiki{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Đường dẫn"><a href="{% url 'public:home' %}">Trang chủ</a><span>/</span><a href="{% url 'public:association_list' %}">Hiệp hội</a>{% if association.parent %}<span>/</span><a href="{{ association.parent.get_absolute_url }}">{{ association.parent.short_name|default:association.parent.name }}</a>{% endif %}<span>/</span><span>{{ association.short_name|default:association.name }}</span></nav>
+    <div class="hero-split">
+      <div class="grow" style="display:flex;gap:20px;align-items:flex-start">
+        {% if association.logo %}<img class="logo-img" style="width:80px;height:80px" src="{{ association.logo.url }}" alt="">{% else %}<div class="avatar ring" style="width:80px;height:80px;font-size:20px" aria-hidden="true">{{ association.initials }}</div>{% endif %}
+        <div>
+          <h1>{{ association.name }}</h1>
+          <p class="lead" style="font-size:15px;margin-top:8px">{{ association.get_level_display }}{% if association.province %} · {{ association.province.name }}{% endif %}{% if association.is_partner %} · <span style="color:var(--gold-light)">Đối tác xác minh{% if association.partner_since %} từ {{ association.partner_since|date:"m/Y" }}{% endif %}</span>{% endif %}</p>
+        </div>
+      </div>
+      <div class="stats cols-3">
+        <div class="stat"><div class="stat-value" style="font-size:24px">{{ member_count }}</div><div class="stat-label">Hội viên có hồ sơ</div></div>
+        <div class="stat"><div class="stat-value" style="font-size:24px">{{ children|length }}</div><div class="stat-label">Chi hội / CLB</div></div>
+        <div class="stat"><div class="stat-value" style="font-size:24px">{{ upcoming|length }}</div><div class="stat-label">Sự kiện sắp tới</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="container layout">
+  <div class="main">
+    {% if association.description %}<div class="card card-lg prose">{{ association.description|md }}</div>{% endif %}
+    {% if leadership %}<h2 class="section-title sm" style="margin:32px 0 16px">Ban chấp hành</h2>
+    <div class="grid grid-auto-260">{% for m in leadership %}{% include "partials/person_mini.html" with p=m.person role=m.position %}{% endfor %}</div>{% endif %}
+    <h2 class="section-title sm" style="margin:32px 0 16px">Hội viên có hồ sơ</h2>
+    <div class="grid grid-auto-260">{% for m in members %}{% with l=m.person.primary_link %}{% include "partials/person_mini.html" with p=m.person role=m.position extra=l.company.display_name %}{% endwith %}{% empty %}<p class="muted">Chưa có hội viên được xác nhận trên doanhnhan.wiki.</p>{% endfor %}</div>
+    {% paginate members %}
+    {% if children %}<h2 class="section-title sm" style="margin:32px 0 16px">Chi hội &amp; câu lạc bộ trực thuộc</h2>
+    <div class="grid grid-auto-260">{% for c in children %}<a class="card card-link" href="{{ c.get_absolute_url }}"><b>{{ c.name }}</b><span class="small muted">{{ c.get_level_display }}{% if c.province %} · {{ c.province.name }}{% endif %}</span></a>{% endfor %}</div>{% endif %}
+    {% include "partials/video_section.html" with more_url=None %}
+  </div>
+  <aside class="aside">
+    <div class="card infobox"><dl>
+      <dt>Cấp</dt><dd>{{ association.get_level_display }}</dd>
+      {% if association.province %}<dt>Tỉnh / thành</dt><dd>{{ association.province.name }}</dd>{% endif %}
+      {% if association.parent %}<dt>Trực thuộc</dt><dd><a href="{{ association.parent.get_absolute_url }}">{{ association.parent.name }}</a></dd>{% endif %}
+      {% if association.sectors.all %}<dt>Ngành</dt><dd>{% for s in association.sectors.all %}<a href="{{ s.get_absolute_url }}">{{ s.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
+      {% if association.website %}<dt>Website</dt><dd><a href="{{ association.website }}" target="_blank" rel="noopener nofollow">{{ association.website|cut:"https://"|cut:"http://"|truncatechars:30 }}</a></dd>{% endif %}
+    </dl></div>
+    <div class="card"><h2 class="card-title">Sự kiện</h2>
+      <ul class="list-plain">{% for e in upcoming %}<li><a href="{{ e.get_absolute_url }}"><b>{{ e.title }}</b></a><div class="small muted">{{ e.starts_at|date:"d/m/Y" }} · sắp diễn ra</div></li>{% endfor %}
+      {% for e in past %}<li><a href="{{ e.get_absolute_url }}">{{ e.title }}</a><div class="small muted">{{ e.starts_at|date:"d/m/Y" }}</div></li>{% endfor %}
+      {% if not upcoming and not past %}<li class="muted">Chưa có sự kiện.</li>{% endif %}</ul>
+    </div>
+    <a class="btn btn-outline btn-block" href="{% url 'public:feedback' %}?chu-de=event">Gửi sự kiện của hội</a>
+  </aside>
+</div>
+{% endblock %}

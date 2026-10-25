@@ -1,0 +1,9 @@
+Django==5.2.18
+dj-database-url>=2.3
+psycopg[binary]>=3.2
+whitenoise>=6.9
+gunicorn>=23.0
+Markdown>=3.7
+nh3>=0.2.20
+Pillow>=11.0
+requests>=2.32

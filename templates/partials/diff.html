@@ -1,0 +1,9 @@
+<div class="diff-list">
+{% for row in diff %}<div class="diff-row">
+  <div class="diff-label">{{ row.label }}{% if row.kind == "text" %} <span class="small muted">· {{ row.words }} từ{% if row.is_new %} · mục mới{% endif %}</span>{% endif %}</div>
+  {% if row.kind == "field" %}<div class="diff"><div class="old">{{ row.old }}</div><div class="new">{{ row.new }}</div></div>
+  {% elif row.kind == "image" %}<div class="row" style="gap:12px">{% if row.old %}<img class="preview-img" src="{{ MEDIA_URL }}{{ row.old }}" alt="Ảnh cũ">{% endif %}<span>→</span>{% if row.new %}<img class="preview-img" src="{% if row.new|slice:':8' == 'pending/' %}{% url 'member:pending_image' %}?p={{ row.new|urlencode }}{% else %}{{ MEDIA_URL }}{{ row.new }}{% endif %}" alt="Ảnh mới">{% else %}<span class="muted">(xóa ảnh)</span>{% endif %}</div>
+  {% elif row.kind == "text" %}<div class="diff" style="white-space:pre-wrap">{{ row.html }}</div>
+  {% else %}<div class="diff">{% for x in row.removed %}<div class="old">− {{ x }}</div>{% endfor %}{% for x in row.added %}<div class="new">+ {{ x }}</div>{% endfor %}</div>{% endif %}
+</div>{% empty %}<p class="muted">Không có thay đổi so với bản đang công bố.</p>{% endfor %}
+</div>

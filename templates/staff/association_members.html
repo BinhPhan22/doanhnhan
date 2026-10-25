@@ -1,0 +1,23 @@
+{% extends "staff/base.html" %}
+{% block title %}Hội viên – {{ association.name }}{% endblock %}
+{% block content %}
+<p class="small"><a href="{% url 'staff:association_list' %}">← Hiệp hội</a></p>
+<div class="row between" style="margin-top:8px"><h1 class="admin-title">Hội viên: {{ association.name }}</h1><a class="btn btn-outline btn-sm" href="{{ association.get_absolute_url }}" target="_blank">Xem trang ↗</a></div>
+<form method="post" class="card" style="margin-top:20px">{% csrf_token %}<input type="hidden" name="action" value="add">
+  <h2 class="card-title">Thêm / cập nhật hội viên</h2>
+  <datalist id="ds-person"></datalist>
+  <div class="form-grid">
+    <div class="field"><label for="m-person">Doanh nhân</label><input id="m-person" name="person" class="input" list="ds-person" data-suggest="person" autocomplete="off" placeholder="Gõ tên rồi chọn gợi ý" required></div>
+    <div class="field"><label for="m-pos">Chức danh trong hội</label><input id="m-pos" name="position" class="input" placeholder="Hội viên"></div>
+    <div class="field"><label for="m-start">Từ năm</label><input id="m-start" name="start_year" class="input" inputmode="numeric"></div>
+    <div class="field"><label for="m-sort">Thứ tự hiển thị</label><input id="m-sort" name="sort_order" class="input" inputmode="numeric" value="100"></div>
+  </div>
+  <label class="check" style="margin-top:10px"><input type="checkbox" name="is_leadership"> Thuộc ban chấp hành (hiện ở mục Ban chấp hành)</label>
+  <div class="form-actions"><button class="btn btn-dark" type="submit">Lưu hội viên</button></div>
+</form>
+<div class="card" style="padding:0;margin-top:20px"><div class="table-wrap"><table class="table admin-table">
+  <thead><tr><th>Doanh nhân</th><th>Chức danh</th><th>BCH</th><th>Trạng thái</th><th></th></tr></thead>
+  <tbody>{% for m in memberships %}<tr><td><a href="{{ m.person.get_absolute_url }}" target="_blank"><b>{{ m.person.full_name }}</b></a></td><td>{{ m.position }}</td><td>{% if m.is_leadership %}✓{% endif %}</td><td><span class="status-pill {{ m.state }}">{{ m.get_state_display }}</span></td>
+    <td style="white-space:nowrap"><form method="post" class="inline-form">{% csrf_token %}<input type="hidden" name="membership" value="{{ m.pk }}">{% if m.state != "confirmed" %}<button class="btn btn-dark btn-sm" name="action" value="confirm">Xác nhận</button> {% endif %}{% if m.state == "pending" %}<button class="btn btn-outline btn-sm" name="action" value="reject">Không xác nhận</button> {% endif %}<button class="btn btn-danger btn-sm" name="action" value="delete" formnovalidate onclick="return confirm('Xóa hội viên này?')">Xóa</button></form></td></tr>
+  {% empty %}<tr><td colspan="5" class="empty-state">Chưa có hội viên.</td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

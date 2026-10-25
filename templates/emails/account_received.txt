@@ -1,0 +1,8 @@
+Chào {{ user.full_name }},
+
+doanhnhan.wiki đã nhận đăng ký tài khoản của bạn ({{ user.email }}). Ban quản trị sẽ xem xét và phản hồi trong vài ngày làm việc; có thể chúng tôi liên hệ để xác minh.
+
+Trong lúc chờ, bạn vẫn xem được toàn bộ thông tin trên trang: {{ site_url }}
+
+Trân trọng,
+Ban vận hành doanhnhan.wiki

@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.env
+db.sqlite3
+media/
+private_media/
+staticfiles/
+.venv/
+.du-lieu-da-nap
+backups/
+*.sql.gz
+*.sqlite3.gz
+.DS_Store

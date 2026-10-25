@@ -1,0 +1,12 @@
+{% extends "accounts/_box.html" %}
+{% block width %}640px{% endblock %}
+{% block title %}Tài khoản – doanhnhan.wiki{% endblock %}
+{% block heading %}Thông tin tài khoản{% endblock %}
+{% block box %}<form method="post" class="stack" style="gap:14px">{% csrf_token %}
+  <div class="field"><label>Email</label><input class="input" value="{{ user.email }}" disabled></div>
+  {% include "partials/field.html" with field=form.full_name %}{% include "partials/field.html" with field=form.phone %}{% include "partials/field.html" with field=form.newsletter %}
+  <div class="row" style="gap:10px"><button class="btn btn-gold" type="submit">Lưu</button><a class="btn btn-outline" href="{% url 'accounts:password_change' %}">Đổi mật khẩu</a><a class="btn btn-outline" href="{% url 'member:dashboard' %}">Về trang thành viên</a></div>
+</form>
+<h2 class="card-title" style="margin-top:28px">Văn bản đã đồng ý</h2>
+<ul class="list-plain">{% for a in acceptances %}<li>{{ a.version.document.title }} – phiên bản {{ a.version.version }} <span class="small muted">· {{ a.accepted_at|date:"d/m/Y H:i" }}</span></li>{% empty %}<li class="muted">Chưa có.</li>{% endfor %}</ul>
+<p class="small muted" style="margin-top:16px">Muốn xem, sửa, xóa dữ liệu hoặc rút lại đồng ý? <a href="{% url 'public:data_request' %}">Gửi yêu cầu về dữ liệu cá nhân</a>.</p>{% endblock %}

@@ -1,0 +1,58 @@
+<article class="story-card card" style="display:flex;flex-direction:column;position:relative">
+  <div class="story-card-thumb-wrap" style="position:relative">
+    <a href="{{ s.get_absolute_url }}" class="story-card-thumb-link">
+      {% if s.cover_image %}
+        <img src="{{ s.cover_image.url }}" alt="{{ s.title }}" class="story-card-thumb" loading="lazy">
+      {% else %}
+        <div class="story-card-placeholder">
+          <span class="story-placeholder-icon">📖</span>
+          <span class="story-placeholder-type">{{ s.get_story_type_display }}</span>
+        </div>
+      {% endif %}
+    </a>
+    <span class="story-card-type-tag">{{ s.get_story_type_display }}</span>
+    <div class="like-badge-overlay">
+      <button type="button" class="btn-like-heart" data-like-btn data-type="story" data-id="{{ s.id }}" data-count="{{ s.likes_count|default:0 }}" title="Thả tim bài viết">
+        <svg class="heart-icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span class="like-count" data-like-count>{{ s.likes_count|default:0 }}</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="story-card-body" style="display:flex;flex-direction:column;flex:1;padding:16px">
+    <div class="story-card-meta-top" style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-bottom:8px">
+      <span class="story-date">{{ s.published_at|date:"d/m/Y" }}</span>
+      <span class="dot">·</span>
+      <span class="story-reading-time">{{ s.reading_time_minutes }} phút đọc</span>
+      {% if s.views_count %}
+        <span class="dot">·</span>
+        <span title="Lượt xem">👁️ {{ s.views_count }}</span>
+      {% endif %}
+    </div>
+
+    <h3 class="story-card-title" style="font-size:16px;line-height:1.4;margin:0 0 8px;font-weight:700">
+      <a href="{{ s.get_absolute_url }}" style="color:var(--ink);text-decoration:none">{{ s.title }}</a>
+    </h3>
+
+    <p class="story-card-summary" style="font-size:13.5px;color:var(--muted);line-height:1.5;margin:0 0 14px;flex:1">
+      {{ s.summary|default:s.content_md|truncatewords:20 }}
+    </p>
+
+    <div class="story-card-footer" style="margin-top:auto;padding-top:10px;border-top:1px solid #F1F5F9;display:flex;align-items:center;justify-content:space-between;font-size:12px">
+      <div class="story-author-info" style="display:flex;align-items:center;gap:6px">
+        <span class="story-author-avatar" style="width:22px;height:22px;border-radius:50%;background:var(--sand);display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:var(--gold-darker)">{{ s.author_name|slice:":1"|upper }}</span>
+        <span class="story-author-name" style="color:var(--ink);font-weight:500">{{ s.author_name|truncatechars:18 }}</span>
+      </div>
+
+      {% if s.featured_person %}
+        <a href="{{ s.featured_person.get_absolute_url }}" class="story-entity-link" title="Xem hồ sơ {{ s.featured_person.full_name }}" style="color:var(--gold-darker);font-weight:600;text-decoration:none">
+          👤 {{ s.featured_person.full_name|truncatechars:16 }}
+        </a>
+      {% elif s.featured_company %}
+        <a href="{{ s.featured_company.get_absolute_url }}" class="story-entity-link" title="Xem hồ sơ {{ s.featured_company.display_name }}" style="color:var(--gold-darker);font-weight:600;text-decoration:none">
+          🏢 {{ s.featured_company.display_name|truncatechars:16 }}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</article>

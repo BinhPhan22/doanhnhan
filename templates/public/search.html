@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Tìm kiếm{% if q %}: {{ q }}{% endif %} – doanhnhan.wiki{% endblock %}
+{% block content %}
+<section class="hero"><div class="container">
+  <p class="eyebrow">Tìm kiếm</p><h1>Tìm trong toàn trang</h1>
+  <form class="search-bar" action="" role="search"><label for="q" class="sr-only">Từ khóa</label><input id="q" name="q" type="search" value="{{ q }}" placeholder="Tên doanh nhân, công ty, mã số thuế, hiệp hội, sự kiện…" autofocus><button class="btn btn-gold" type="submit">Tìm kiếm</button></form>
+</div></section>
+<section class="container section section-last">
+  {% if q %}<p class="muted" style="margin-bottom:20px"><b style="color:var(--ink)">{{ total }}</b> kết quả cho “{{ q }}” (không phân biệt dấu).</p>
+    {% if people %}<h2 class="section-title sm" style="margin-bottom:12px">Doanh nhân</h2><div class="grid grid-auto-260" style="margin-bottom:32px">{% for p in people %}{% include "partials/person_card.html" %}{% endfor %}</div>{% endif %}
+    {% if companies %}<h2 class="section-title sm" style="margin-bottom:12px">Doanh nghiệp</h2><div class="stack" style="gap:10px;margin-bottom:32px">{% for c in companies %}<a class="row-card" href="{{ c.get_absolute_url }}"><div class="avatar square" aria-hidden="true">{{ c.initials }}</div><div class="grow"><b>{{ c.display_name }}</b><div class="small muted">{{ c.legal_name }}{% if c.tax_code %} · MST {{ c.tax_code }}{% endif %}{% if c.province %} · {{ c.province.name }}{% endif %}</div></div></a>{% endfor %}</div>{% endif %}
+    {% if sectors %}<h2 class="section-title sm" style="margin-bottom:12px">Ngành nghề</h2><div class="chips" style="margin-bottom:32px">{% for s in sectors %}<a class="chip chip-lg" href="{{ s.get_absolute_url }}">{{ s }}</a>{% endfor %}</div>{% endif %}
+    {% if associations %}<h2 class="section-title sm" style="margin-bottom:12px">Hiệp hội</h2><ul class="list-plain card" style="margin-bottom:32px">{% for a in associations %}<li><a href="{{ a.get_absolute_url }}"><b>{{ a.name }}</b></a> <span class="small muted">{{ a.get_level_display }}</span></li>{% endfor %}</ul>{% endif %}
+    {% if events %}<h2 class="section-title sm" style="margin-bottom:12px">Sự kiện</h2><ul class="list-plain card" style="margin-bottom:32px">{% for e in events %}<li><a href="{{ e.get_absolute_url }}"><b>{{ e.title }}</b></a> <span class="small muted">{{ e.starts_at|date:"d/m/Y" }}</span></li>{% endfor %}</ul>{% endif %}
+    {% if videos %}<h2 class="section-title sm" style="margin-bottom:12px">Video</h2><div class="grid grid-auto-260">{% for v in videos %}{% include "partials/video_card.html" with show_kind=True %}{% endfor %}</div>{% endif %}
+    {% if not total %}<div class="empty-state card">Không có kết quả. Hãy thử từ khóa ngắn hơn, hoặc <a href="{% url 'public:feedback' %}">gợi ý chúng tôi bổ sung hồ sơ</a>.</div>{% endif %}
+  {% endif %}
+</section>
+{% endblock %}

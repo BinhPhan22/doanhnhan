@@ -1,0 +1,228 @@
+{% extends "staff/base.html" %}
+{% block title %}Vinh danh: {{ badge.name }}{% endblock %}
+{% block content %}
+<p class="small"><a href="{% url 'staff:award_list' %}">← Quay lại danh sách danh hiệu</a></p>
+
+<div class="row between" style="align-items:center;margin-top:12px;flex-wrap:wrap;gap:12px">
+  <div>
+    <h1 class="admin-title">Danh sách vinh danh: {{ badge.name }}</h1>
+    <div style="margin-top:6px;display:flex;align-items:center;gap:10px">
+      <span class="badge-award badge-{{ badge.color }}">
+        {% if badge.icon == 'star' %}★{% elif badge.icon == 'medal' %}🎖️{% elif badge.icon == 'award' %}🏆{% else %}🏵️{% endif %} {{ badge.name }}
+      </span>
+      <span class="muted small">{{ badge.issuer }}</span>
+    </div>
+  </div>
+  <a class="btn btn-outline btn-sm" href="{% url 'staff:award_edit' badge.pk %}">Sửa thông tin danh hiệu</a>
+</div>
+
+<div class="card" style="margin-top:16px;background:var(--sand);border-left:4px solid var(--gold);padding:14px 18px">
+  <div style="font-weight:600;color:var(--ink);font-size:14px">💡 Gán danh hiệu trực tiếp trong hồ sơ:</div>
+  <div class="small muted" style="margin-top:4px;line-height:1.5">
+    Cách thuận tiện nhất là bạn mở trực tiếp hồ sơ doanh nhân hoặc doanh nghiệp bất kỳ để gán trong mục <b>“Huy hiệu &amp; Giải thưởng danh dự”</b>:
+    <a href="{% url 'staff:person_list' %}" style="font-weight:600;color:var(--gold-dark);margin:0 4px">👤 Xem danh bạ Doanh nhân</a> ·
+    <a href="{% url 'staff:company_list' %}" style="font-weight:600;color:var(--gold-dark);margin-left:4px">🏢 Xem danh bạ Doanh nghiệp</a>
+  </div>
+</div>
+
+<div class="layout" style="margin-top:24px;display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px;align-items:start">
+  <!-- Bảng danh sách vinh danh -->
+  <div class="stack" style="gap:24px">
+    <!-- 1. Bảng Doanh nhân -->
+    <div class="card" style="padding:0">
+      <div style="padding:14px 18px;border-bottom:1px solid var(--line);background:var(--sand);display:flex;justify-content:space-between;align-items:center">
+        <strong style="font-size:15px">👤 Doanh nhân được trao danh hiệu ({{ awardees.count }})</strong>
+      </div>
+      <div class="table-wrap">
+        <table class="table admin-table">
+          <thead>
+            <tr>
+              <th>Doanh nhân</th>
+              <th>Năm trao</th>
+              <th>Chi tiết / Danh hiệu</th>
+              <th>Quyết định / Ghi chú</th>
+              <th style="text-align:right"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in awardees %}
+            <tr>
+              <td>
+                <a href="{% url 'staff:person_edit' a.person.pk %}" style="font-weight:600;color:var(--ink)">{{ a.person.full_name }}</a>
+                {% if a.person.primary_company %}
+                  <div class="small muted">{{ a.person.primary_company.display_name }}</div>
+                {% endif %}
+              </td>
+              <td><b>{{ a.year|default:"—" }}</b></td>
+              <td>{{ a.title|default:"—" }}</td>
+              <td class="small muted">{{ a.citation|default:"—" }}</td>
+              <td style="text-align:right;white-space:nowrap">
+                <a class="btn btn-outline btn-sm" href="{% url 'staff:person_edit' a.person.pk %}" title="Mở hồ sơ doanh nhân để chỉnh sửa">Sửa hồ sơ</a>
+                <form method="post" action="{% url 'staff:award_honor_delete' badge.pk a.pk %}" class="inline-form" onsubmit="return confirm('Bạn có chắc chắn muốn gỡ danh hiệu khỏi doanh nhân {{ a.person.full_name|escapejs }}?')">
+                  {% csrf_token %}
+                  <button class="btn btn-danger btn-sm" type="submit" title="Gỡ danh hiệu">Gỡ</button>
+                </form>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="empty-state">
+                Chưa có doanh nhân nào được gán danh hiệu này.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 2. Bảng Doanh nghiệp -->
+    <div class="card" style="padding:0">
+      <div style="padding:14px 18px;border-bottom:1px solid var(--line);background:var(--sand);display:flex;justify-content:space-between;align-items:center">
+        <strong style="font-size:15px">🏢 Doanh nghiệp được trao danh hiệu ({{ company_awardees.count }})</strong>
+      </div>
+      <div class="table-wrap">
+        <table class="table admin-table">
+          <thead>
+            <tr>
+              <th>Doanh nghiệp</th>
+              <th>Năm trao</th>
+              <th>Chi tiết / Danh hiệu</th>
+              <th>Quyết định / Ghi chú</th>
+              <th style="text-align:right"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ca in company_awardees %}
+            <tr>
+              <td>
+                <a href="{% url 'staff:company_edit' ca.company.pk %}" style="font-weight:600;color:var(--ink)">{{ ca.company.display_name }}</a>
+                {% if ca.company.tax_code %}
+                  <div class="small muted">MST {{ ca.company.tax_code }}</div>
+                {% endif %}
+              </td>
+              <td><b>{{ ca.year|default:"—" }}</b></td>
+              <td>{{ ca.title|default:"—" }}</td>
+              <td class="small muted">{{ ca.citation|default:"—" }}</td>
+              <td style="text-align:right;white-space:nowrap">
+                <a class="btn btn-outline btn-sm" href="{% url 'staff:company_edit' ca.company.pk %}" title="Mở hồ sơ doanh nghiệp để chỉnh sửa">Sửa hồ sơ</a>
+                <form method="post" action="{% url 'staff:award_company_honor_delete' badge.pk ca.pk %}" class="inline-form" onsubmit="return confirm('Bạn có chắc chắn muốn gỡ danh hiệu khỏi doanh nghiệp {{ ca.company.display_name|escapejs }}?')">
+                  {% csrf_token %}
+                  <button class="btn btn-danger btn-sm" type="submit" title="Gỡ danh hiệu">Gỡ</button>
+                </form>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="empty-state">
+                Chưa có doanh nghiệp nào được gán danh hiệu này.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cột phải: Form gán danh hiệu nhanh -->
+  <div class="stack" style="gap:16px">
+    <div class="card stack" style="gap:14px">
+      <div style="display:flex;gap:8px;border-bottom:1px solid var(--line);padding-bottom:10px">
+        <button type="button" class="btn btn-sm btn-gold" id="btn-tab-person" onclick="switchAssignTab('person')">👤 Gán Doanh nhân</button>
+        <button type="button" class="btn btn-sm btn-outline" id="btn-tab-company" onclick="switchAssignTab('company')">🏢 Gán Doanh nghiệp</button>
+      </div>
+
+      <!-- Form gán cho doanh nhân -->
+      <form id="form-assign-person" method="post" class="stack" style="gap:14px" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="form_type" value="person">
+        {% if person_form.non_field_errors %}<div class="flash flash-error">{{ person_form.non_field_errors|join:" " }}</div>{% endif %}
+
+        <div class="field">
+          <label for="{{ person_form.person.id_for_label }}">Doanh nhân vinh danh <span class="required">*</span></label>
+          {{ person_form.person }}
+          {% if person_form.person.errors %}<div class="field-error">{{ person_form.person.errors|join:" " }}</div>{% endif %}
+        </div>
+
+        <div class="field">
+          <label for="{{ person_form.year.id_for_label }}">Năm vinh danh / trao giải</label>
+          {{ person_form.year }}
+          {% if person_form.year.errors %}<div class="field-error">{{ person_form.year.errors|join:" " }}</div>{% endif %}
+        </div>
+
+        <div class="field">
+          <label for="{{ person_form.title.id_for_label }}">Chi tiết danh hiệu</label>
+          {{ person_form.title }}
+          <small class="muted">Ví dụ: Top 10 Sao Đỏ, Top 100, Doanh nhân tiêu biểu</small>
+          {% if person_form.title.errors %}<div class="field-error">{{ person_form.title.errors|join:" " }}</div>{% endif %}
+        </div>
+
+        <div class="field">
+          <label for="{{ person_form.citation.id_for_label }}">Ghi chú / Quyết định khen thưởng</label>
+          {{ person_form.citation }}
+          <small class="muted">Ví dụ: Theo Quyết định số 45/QĐ-DNT, Báo Tuổi Trẻ</small>
+          {% if person_form.citation.errors %}<div class="field-error">{{ person_form.citation.errors|join:" " }}</div>{% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-gold" style="width:100%;margin-top:6px">🏅 Gán cho Doanh nhân</button>
+      </form>
+
+      <!-- Form gán cho doanh nghiệp -->
+      <form id="form-assign-company" method="post" class="stack" style="gap:14px;display:none" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="form_type" value="company">
+        {% if company_form.non_field_errors %}<div class="flash flash-error">{{ company_form.non_field_errors|join:" " }}</div>{% endif %}
+
+        <div class="field">
+          <label for="{{ company_form.company.id_for_label }}">Doanh nghiệp vinh danh <span class="required">*</span></label>
+          {{ company_form.company }}
+          {% if company_form.company.errors %}<div class="field-error">{{ company_form.company.errors|join:" " }}</div>{% endif %}
+        </div>
+
+        <div class="field">
+          <label for="{{ company_form.year.id_for_label }}">Năm vinh danh / trao giải</label>
+          {{ company_form.year }}
+          {% if company_form.year.errors %}<div class="field-error">{{ company_form.year.errors|join:" " }}</div>{% endif %}
+        </div>
+
+        <div class="field">
+          <label for="{{ company_form.title.id_for_label }}">Chi tiết danh hiệu</label>
+          {{ company_form.title }}
+          <small class="muted">Ví dụ: Top 10, Top 100, Doanh nghiệp xuất sắc</small>
+          {% if company_form.title.errors %}<div class="field-error">{{ company_form.title.errors|join:" " }}</div>{% endif %}
+        </div>
+
+        <div class="field">
+          <label for="{{ company_form.citation.id_for_label }}">Ghi chú / Quyết định khen thưởng</label>
+          {{ company_form.citation }}
+          <small class="muted">Ví dụ: Theo Quyết định số 123/QĐ-DNT, Báo Đầu Tư</small>
+          {% if company_form.citation.errors %}<div class="field-error">{{ company_form.citation.errors|join:" " }}</div>{% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-gold" style="width:100%;margin-top:6px">🏢 Gán cho Doanh nghiệp</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchAssignTab(tab) {
+  var pBtn = document.getElementById('btn-tab-person');
+  var cBtn = document.getElementById('btn-tab-company');
+  var pForm = document.getElementById('form-assign-person');
+  var cForm = document.getElementById('form-assign-company');
+  if (tab === 'person') {
+    pBtn.className = 'btn btn-sm btn-gold';
+    cBtn.className = 'btn btn-sm btn-outline';
+    pForm.style.display = 'flex';
+    cForm.style.display = 'none';
+  } else {
+    cBtn.className = 'btn btn-sm btn-gold';
+    pBtn.className = 'btn btn-sm btn-outline';
+    cForm.style.display = 'flex';
+    pForm.style.display = 'none';
+  }
+}
+</script>
+{% endblock %}

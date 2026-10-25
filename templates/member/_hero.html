@@ -1,0 +1,10 @@
+<section class="hero">
+  <div class="container" style="padding-top:36px;padding-bottom:32px">
+    <p class="eyebrow">Khu vực thành viên</p>
+    <h1>{{ heading }}</h1>
+    <div class="status-bar">
+      {% if user.status == "active" %}<span class="chip chip-solid-gold">Tài khoản đã duyệt</span>{% elif user.status == "pending" %}<span class="chip">Đang chờ duyệt</span>{% else %}<span class="chip">{{ user.get_status_display }}</span>{% endif %}
+      <span>{{ user.full_name }} · {{ user.email }}</span><span>·</span><a href="{% url 'member:dashboard' %}" style="color:var(--gold-light)">Bài đã gửi</a><span>·</span><a href="{% url 'accounts:profile' %}" style="color:var(--gold-light)">Tài khoản</a>
+    </div>
+  </div>
+</section>

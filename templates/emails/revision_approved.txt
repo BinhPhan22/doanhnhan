@@ -1,0 +1,8 @@
+Chào {{ revision.author.full_name }},
+
+Nội dung bạn gửi “{{ revision.title }}” đã được duyệt và công bố (bản sửa #{{ revision.revision_no }}).
+Xem trang: {{ site_url }}{{ entity.get_absolute_url }}
+{% if note %}
+Ghi chú của ban biên tập: {{ note }}
+{% endif %}
+Cảm ơn bạn đã đóng góp cho doanhnhan.wiki.

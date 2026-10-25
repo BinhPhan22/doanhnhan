@@ -1,0 +1,4 @@
+Bản gửi mới chờ duyệt: {{ revision.title }} ({{ revision.get_kind_display }}, {{ revision.get_entity_type_display }})
+Người gửi: {{ revision.author.full_name }} <{{ revision.author.email }}>
+
+Duyệt tại: {{ site_url }}/quan-tri/duyet/{{ revision.pk }}/

@@ -1,0 +1,61 @@
+{# Dấu mốc, video, nguồn tham khảo — dùng chung cho doanh nhân và doanh nghiệp #}
+<div class="card form-section">
+  <h2>{{ n_milestones }}. Dấu mốc</h2>
+  <p class="hint">Hiện thành dòng thời gian, tự sắp theo năm.</p>
+  {% if errors.milestones %}<p class="field-error">{{ errors.milestones }}</p>{% endif %}
+  <div id="{{ p }}-dm-list" class="stack" style="gap:10px">
+    {% for m in data.milestones|default:blank_rows %}<div class="repeat-row" data-repeat-row style="grid-template-columns:110px 170px minmax(0,1fr) minmax(0,1fr) auto">
+      <div class="field"><label>Năm</label><input name="milestone_year" class="input" inputmode="numeric" placeholder="yyyy" value="{{ m.year|default_if_none:'' }}"></div>
+      <div class="field"><label>Loại</label><select name="milestone_kind" class="select">{% for val, lbl in milestone_kinds %}<option value="{{ val }}"{% if m.kind == val %} selected{% endif %}>{{ lbl }}</option>{% endfor %}</select></div>
+      <div class="field"><label>Nội dung</label><input name="milestone_title" class="input" placeholder="Ví dụ: Thành lập công ty tại TP. Hồ Chí Minh" value="{{ m.title|default:'' }}"></div>
+      <div class="field"><label>Nguồn (link)</label><input name="milestone_source" class="input" type="url" placeholder="https://" value="{{ m.source_url|default:'' }}"></div>
+      {% include "editor/_row_actions.html" %}
+    </div>{% endfor %}
+  </div>
+  <button type="button" class="chip chip-lg chip-dashed" style="align-self:flex-start" data-repeat-add="#{{ p }}-dm-list">+ Thêm dấu mốc</button>
+</div>
+
+<div class="card form-section">
+  <h2>{{ n_videos }}. Video liên quan</h2>
+  <p class="hint">Chỉ dán link, không tải tệp video. Không có thì để trống — khối Video tự ẩn trên trang.</p>
+  {% if errors.videos %}<p class="field-error">{{ errors.videos }}</p>{% endif %}
+  <div id="{{ p }}-vid-list" class="stack" style="gap:10px">
+    {% for v in data.videos|default:blank_rows %}<div class="repeat-row" data-repeat-row style="grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto">
+      <div class="field"><label>Link video (YouTube, Vimeo, Facebook, TikTok)</label><input name="video_url" class="input" type="url" placeholder="https://www.youtube.com/watch?v=…" value="{{ v.url|default:'' }}" data-video-input="#{{ p }}-vid-st"></div>
+      <div class="field"><label>Tiêu đề <span style="font-weight:400;color:var(--muted-2)">(để trống: tự lấy từ nền tảng)</span></label><input name="video_title" class="input" value="{{ v.title|default:'' }}"></div>
+      {% include "editor/_row_actions.html" %}
+    </div>{% endfor %}
+  </div>
+  <button type="button" class="chip chip-lg chip-dashed" style="align-self:flex-start" data-repeat-add="#{{ p }}-vid-list">+ Thêm video</button>
+  <p id="{{ p }}-vid-st" class="hint" aria-live="polite"></p>
+</div>
+
+<div class="card form-section">
+  <h2>{{ n_sources }}. Nguồn tham khảo</h2>
+  <p class="hint">Đánh số theo thứ tự: nguồn thứ nhất là [^1], thứ hai là [^2]… dùng để chú thích trong bài viết.</p>
+  {% if errors.sources %}<p class="field-error">{{ errors.sources }}</p>{% endif %}
+  <div id="{{ p }}-src-list" class="stack" style="gap:10px">
+    {% for s in data.sources|default:blank_rows %}<div class="repeat-row" data-repeat-row style="grid-template-columns:minmax(0,1fr) minmax(0,1fr) 170px auto">
+      <div class="field"><label>Tiêu đề nguồn</label><input name="source_title" class="input" placeholder="Tên bài báo, văn bản" value="{{ s.title|default:'' }}"></div>
+      <div class="field"><label>Link</label><input name="source_url" class="input" type="url" placeholder="https://" value="{{ s.url|default:'' }}"></div>
+      <div class="field"><label>Loại</label><select name="source_kind" class="select">{% for val, lbl in source_kinds %}<option value="{{ val }}"{% if s.kind == val %} selected{% endif %}>{{ lbl }}</option>{% endfor %}</select></div>
+      {% include "editor/_row_actions.html" %}
+    </div>{% endfor %}
+  </div>
+  <button type="button" class="chip chip-lg chip-dashed" style="align-self:flex-start" data-repeat-add="#{{ p }}-src-list">+ Thêm nguồn</button>
+</div>
+
+{% if staff %}<div class="card form-section">
+  <h2>Biên tập &amp; xác minh</h2>
+  <div class="form-grid">
+    <div class="field"><label for="st-status">Trạng thái</label><select id="st-status" name="status" class="select">{% for val, lbl in status_choices %}<option value="{{ val }}"{% if data.status == val %} selected{% endif %}>{{ lbl }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="st-ver">Xác minh</label><select id="st-ver" name="verification" class="select">{% for val, lbl in verification_choices %}<option value="{{ val }}"{% if data.verification == val %} selected{% endif %}>{{ lbl }}</option>{% endfor %}</select></div>
+    <div class="field full"><label for="st-vnote">Ghi chú xác minh (hiện trên trang)</label><input id="st-vnote" name="verification_note" class="input" value="{{ data.verification_note|default:'' }}" placeholder="Ví dụ: đối chiếu đăng ký kinh doanh và xác nhận của hiệp hội"></div>
+  </div>
+  <label class="check"><input type="checkbox" name="is_featured"{% if data.is_featured %} checked{% endif %}> Hiện ở mục Nổi bật</label>
+</div>{% endif %}
+
+<div class="card form-section">
+  <h2>Ghi chú cho ban biên tập</h2>
+  <textarea name="note" class="textarea" rows="3" placeholder="Nguồn gốc thông tin, điều cần lưu ý khi duyệt…">{{ note|default:'' }}</textarea>
+</div>

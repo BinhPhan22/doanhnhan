@@ -1,0 +1,10 @@
+Chào {{ revision.author.full_name }},
+
+Ban biên tập cần bạn bổ sung cho nội dung “{{ revision.title }}”:
+
+{{ note }}
+
+Mở bản gửi để bổ sung rồi gửi duyệt lại: {{ site_url }}/thanh-vien/ban-gui/{{ revision.pk }}/sua/
+
+Trân trọng,
+Ban biên tập doanhnhan.wiki

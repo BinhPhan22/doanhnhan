@@ -1,0 +1,17 @@
+<div class="field">
+  <label for="sec-{{ key }}">{{ label }} <span style="font-weight:400;color:var(--muted-2)">· {{ hint }}</span></label>
+  <div class="editor">
+    <div class="editor-toolbar" role="toolbar" aria-label="Định dạng">
+      <button type="button" data-md="**|**" data-placeholder="chữ đậm" aria-label="In đậm"><b>B</b></button>
+      <button type="button" data-md="*|*" data-placeholder="chữ nghiêng" aria-label="In nghiêng"><i>I</i></button>
+      <button type="button" data-md="&#10;## |" data-placeholder="Tiêu đề mục">Tiêu đề mục</button>
+      <button type="button" data-md="&#10;- |" data-placeholder="ý chính">Danh sách</button>
+      <button type="button" data-md="&#10;&gt; |" data-placeholder="câu trích dẫn">Trích dẫn</button>
+      <button type="button" data-md="[|](https://)" data-placeholder="chữ liên kết">Liên kết</button>
+      <button type="button" data-md="[^|]" data-placeholder="1">Chú thích nguồn</button>
+      <span class="word-count" data-word-count>0 từ</span>
+    </div>
+    <textarea id="sec-{{ key }}" name="section_{{ key }}" class="textarea" rows="{{ rows }}">{{ value }}</textarea>
+  </div>
+  <p class="hint">{{ help }}</p>
+</div>

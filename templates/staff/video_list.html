@@ -1,0 +1,21 @@
+{% extends "staff/base.html" %}
+{% block title %}Video{% endblock %}
+{% block content %}
+<div class="row between"><h1 class="admin-title">Video</h1><a class="btn btn-dark" href="{% url 'staff:video_new' %}">+ Thêm video (dán link)</a></div>
+<p class="muted" style="margin-top:8px">Chỉ lưu link YouTube / Vimeo / Facebook / TikTok — không lưu tệp video. Video có link hỏng tự ẩn khỏi trang công khai. Lệnh định kỳ <code>python manage.py check_videos</code> kiểm tra toàn bộ link.</p>
+<form class="toolbar" style="margin-top:16px"><div class="field"><label for="q">Tìm</label><input id="q" name="q" value="{{ q }}" class="input" type="search"></div><label class="check"><input type="checkbox" name="loi" value="1"{% if request.GET.loi %} checked{% endif %}> Chỉ video mất link</label><button class="btn btn-outline">Lọc</button></form>
+<div class="card" style="padding:0"><div class="table-wrap"><table class="table admin-table">
+  <thead><tr><th>Video</th><th>Nền tảng</th><th>Gắn với</th><th>Link</th><th>Trạng thái</th><th></th></tr></thead>
+  <tbody>{% for v in page %}<tr><td><b>{{ v.title|truncatechars:70 }}</b><span class="small muted">{{ v.get_kind_display }}{% if v.duration_label %} · {{ v.duration_label }}{% endif %}</span></td><td>{{ v.platform_label }}</td><td class="small">{% for p in v.persons.all %}{{ p.full_name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% for c in v.companies.all %}{% if forloop.first %}<br>{% endif %}{{ c.display_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+    <td><span class="status-pill {{ v.availability }}">{% if v.availability == "ok" %}Hoạt động{% elif v.availability == "unavailable" %}Mất link{% else %}Chưa rõ{% endif %}</span>{% if v.last_checked_at %}<span class="small muted">{{ v.last_checked_at|date:"d/m H:i" }}</span>{% endif %}</td>
+    <td><span class="status-pill {{ v.status }}">{{ v.get_status_display }}</span></td>
+    <td style="white-space:nowrap">
+      <a class="btn btn-dark btn-sm" href="{% url 'staff:video_edit' v.pk %}">Sửa</a>
+      <form method="post" action="{% url 'staff:video_check' v.pk %}" class="inline-form" style="display:inline">{% csrf_token %}<button class="btn btn-outline btn-sm">Kiểm tra</button></form>
+      <form method="post" action="{% url 'staff:video_toggle_status' v.pk %}" style="display:inline">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-outline btn-sm" type="submit">{% if v.status == 'hidden' %}Hiện{% else %}Ẩn{% endif %}</button></form>
+      <form method="post" action="{% url 'staff:video_delete' v.pk %}" style="display:inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa video {{ v.title|escapejs }}?')">{% csrf_token %}<button class="btn btn-danger btn-sm" type="submit">Xóa</button></form>
+      <a class="btn btn-outline btn-sm" href="{{ v.url }}" target="_blank" rel="noopener">Mở ↗</a>
+    </td></tr>
+  {% empty %}<tr><td colspan="6" class="empty-state">Chưa có video.</td></tr>{% endfor %}</tbody></table></div></div>
+{% paginate page %}
+{% endblock %}

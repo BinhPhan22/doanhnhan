@@ -1,0 +1,9 @@
+Chào {{ user.full_name }},
+
+Tài khoản của bạn trên doanhnhan.wiki đã được duyệt. Bạn có thể đăng nhập và gửi thông tin hồ sơ doanh nhân, doanh nghiệp tại:
+{{ site_url }}/thanh-vien/
+
+Mỗi nội dung gửi lên vẫn được ban biên tập kiểm duyệt trước khi công bố.
+
+Trân trọng,
+Ban vận hành doanhnhan.wiki

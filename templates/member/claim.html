@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Nhận quản lý hồ sơ – doanhnhan.wiki{% endblock %}
+{% block content %}
+{% include "member/_hero.html" with heading="Nhận quản lý hồ sơ" %}
+<div class="container section section-last" style="max-width:760px">
+  <form class="card card-lg stack" method="post" enctype="multipart/form-data" style="gap:16px">{% csrf_token %}
+    <p>Bạn yêu cầu nhận quản lý hồ sơ <a href="{{ person.get_absolute_url }}"><b>{{ person.full_name }}</b></a>. Sau khi được xác minh, các đề xuất sửa của bạn sẽ được ghi nhận là “chính chủ”.</p>
+    {% include "partials/field.html" with field=form.evidence %}
+    {% include "partials/field.html" with field=form.note %}
+    <div class="row" style="gap:10px"><button class="btn btn-gold" type="submit">Gửi yêu cầu</button><a class="btn btn-outline" href="{{ person.get_absolute_url }}">Hủy</a></div>
+  </form>
+</div>
+{% endblock %}

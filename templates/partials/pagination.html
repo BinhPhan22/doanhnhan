@@ -1,0 +1,5 @@
+{% if page.has_other_pages %}<nav class="pagination" aria-label="Phân trang">
+  {% if page.has_previous %}<a href="{% qs trang=page.previous_page_number %}" aria-label="Trang trước">‹</a>{% endif %}
+  {% for n in page.paginator.page_range %}{% if n == page.number %}<span aria-current="page">{{ n }}</span>{% elif n > page.number|add:-3 and n < page.number|add:3 or n == 1 or n == page.paginator.num_pages %}<a href="{% qs trang=n %}">{{ n }}</a>{% endif %}{% endfor %}
+  {% if page.has_next %}<a href="{% qs trang=page.next_page_number %}" aria-label="Trang sau">›</a>{% endif %}
+</nav>{% endif %}

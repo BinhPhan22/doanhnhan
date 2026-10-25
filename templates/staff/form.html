@@ -1,0 +1,38 @@
+{% extends "staff/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<p class="small"><a href="{{ back }}">← Quay lại</a></p>
+<div class="row between" style="margin-top:8px">
+  <h1 class="admin-title">{% if instance.pk %}Sửa: {{ instance }}{% else %}{{ title }} – thêm mới{% endif %}</h1>
+  {% if instance.pk and instance.get_absolute_url %}
+  <a class="btn btn-outline btn-sm" href="{{ instance.get_absolute_url }}" target="_blank">Xem trang ↗</a>
+  {% endif %}
+</div>
+<form class="card stack" method="post" enctype="multipart/form-data" style="gap:16px;margin-top:20px;max-width:900px" novalidate>{% csrf_token %}
+  {% if form.non_field_errors %}<div class="flash flash-error">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  <div class="form-grid">{% for field in form %}{% if field.is_hidden %}{{ field }}{% else %}{% include "partials/field.html" with full=True %}{% endif %}{% endfor %}</div>
+  {% block extra_fields %}{% endblock %}
+  <div class="form-actions row between" style="align-items:center;flex-wrap:wrap;gap:12px">
+    <div class="row" style="gap:8px">
+      <button class="btn btn-gold" type="submit">Lưu</button>
+      <a class="btn btn-outline" href="{{ back }}">Hủy</a>
+    </div>
+    {% if instance.pk and delete_url %}
+    <div class="row" style="gap:8px">
+      {% if toggle_url %}
+      <button form="toggle-form" class="btn btn-outline" type="submit">{{ toggle_label }}</button>
+      {% endif %}
+      <button form="delete-form" class="btn btn-danger" type="submit" onclick="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn mục này?')">Xóa</button>
+    </div>
+    {% endif %}
+  </div>
+</form>
+{% if instance.pk %}
+  {% if toggle_url %}
+  <form id="toggle-form" method="post" action="{{ toggle_url }}" style="display:none">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"></form>
+  {% endif %}
+  {% if delete_url %}
+  <form id="delete-form" method="post" action="{{ delete_url }}" style="display:none">{% csrf_token %}</form>
+  {% endif %}
+{% endif %}
+{% endblock %}

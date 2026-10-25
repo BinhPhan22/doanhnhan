@@ -1,0 +1,10 @@
+.env
+db.sqlite3
+media
+private_media
+staticfiles
+__pycache__
+*.pyc
+.git
+.venv
+.du-lieu-da-nap

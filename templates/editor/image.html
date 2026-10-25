@@ -1,0 +1,5 @@
+<div class="upload-box">{% if path %}<input type="hidden" name="keep_{{ field }}" value="{{ path }}">{% endif %}
+  {% if path %}<img class="preview-img" src="{% if path|slice:':8' == 'pending/' %}{% url 'member:pending_image' %}?p={{ path|urlencode }}{% else %}{{ MEDIA_URL }}{{ path }}{% endif %}" alt="" style="{% if round %}border-radius:50%;{% endif %}width:64px;height:64px;object-fit:cover">{% else %}<div class="avatar{% if not round %} square{% endif %}" style="width:64px;height:64px" aria-hidden="true">Ảnh</div>{% endif %}
+  <div style="flex:1 1 220px">{{ label }}{% if path %}<br><label class="check small"><input type="checkbox" name="remove_{{ field }}"> Xóa ảnh hiện tại</label>{% endif %}{% if errors|get:field %}<p class="field-error">{{ errors|get:field }}</p>{% endif %}</div>
+  <label class="btn btn-outline" style="cursor:pointer">Tải ảnh lên<input type="file" name="{{ field }}" accept="image/jpeg,image/png,image/webp" class="sr-only"></label>
+</div>

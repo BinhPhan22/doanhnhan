@@ -1,0 +1,4 @@
+{% if videos %}<section>
+  <div class="section-head" style="margin:32px 0 12px"><h2 style="margin:0">Video</h2>{% if more_url %}<a class="link-more" href="{{ more_url }}">Xem thư viện video →</a>{% endif %}</div>
+  <div class="grid grid-auto-210">{% for v in videos %}{% include "partials/video_card.html" %}{% endfor %}</div>
+</section>{% endif %}

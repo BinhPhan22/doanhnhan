@@ -1,0 +1,13 @@
+{% extends "staff/form.html" %}
+{% block extra_fields %}
+<p id="video-status" class="hint" aria-live="polite"></p>
+<datalist id="ds-person"></datalist><datalist id="ds-company"></datalist>
+<div class="form-section stack" style="gap:12px">
+  <h2 class="card-title" style="margin:0">Gắn với doanh nhân</h2>
+  <div id="vp-list" class="stack" style="gap:8px">{% for name in linked_people %}<div class="repeat-row" data-repeat-row style="grid-template-columns:minmax(0,1fr) auto"><div class="field"><label>Doanh nhân</label><input name="person_name" class="input" list="ds-person" data-suggest="person" autocomplete="off" value="{{ name }}"></div>{% include "editor/_row_actions.html" %}</div>{% empty %}<div class="repeat-row" data-repeat-row style="grid-template-columns:minmax(0,1fr) auto"><div class="field"><label>Doanh nhân</label><input name="person_name" class="input" list="ds-person" data-suggest="person" autocomplete="off"></div>{% include "editor/_row_actions.html" %}</div>{% endfor %}</div>
+  <button type="button" class="chip chip-lg chip-dashed" style="align-self:flex-start" data-repeat-add="#vp-list">+ Thêm doanh nhân</button>
+  <h2 class="card-title" style="margin:8px 0 0">Gắn với doanh nghiệp</h2>
+  <div id="vc-list" class="stack" style="gap:8px">{% for name in linked_companies %}<div class="repeat-row" data-repeat-row style="grid-template-columns:minmax(0,1fr) auto"><div class="field"><label>Doanh nghiệp</label><input name="company_name" class="input" list="ds-company" data-suggest="company" autocomplete="off" value="{{ name }}"></div>{% include "editor/_row_actions.html" %}</div>{% empty %}<div class="repeat-row" data-repeat-row style="grid-template-columns:minmax(0,1fr) auto"><div class="field"><label>Doanh nghiệp</label><input name="company_name" class="input" list="ds-company" data-suggest="company" autocomplete="off"></div>{% include "editor/_row_actions.html" %}</div>{% endfor %}</div>
+  <button type="button" class="chip chip-lg chip-dashed" style="align-self:flex-start" data-repeat-add="#vc-list">+ Thêm doanh nghiệp</button>
+</div>
+{% endblock %}

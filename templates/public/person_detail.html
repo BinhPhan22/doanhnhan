@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block title %}{{ person.full_name }} – doanhnhan.wiki{% endblock %}
+{% block description %}{% if sections.summary %}{{ sections.summary.body_md|excerpt:160 }}{% else %}{{ person.full_name }} – {{ person.headline }}{% endif %}{% endblock %}
+{% block meta %}<link rel="canonical" href="{{ SITE_URL }}{{ person.get_absolute_url }}">
+<meta property="og:title" content="{{ person.full_name }} – Bách khoa toàn thư Doanh nhân trẻ">
+<meta property="og:description" content="{% if sections.summary %}{{ sections.summary.body_md|excerpt:160 }}{% else %}{{ person.full_name }} – {{ person.headline }}{% endif %}">
+<meta property="og:type" content="profile">
+<meta property="og:url" content="{{ request.build_absolute_uri }}">
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% url 'public:person_og_image' person.slug %}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% url 'public:person_og_image' person.slug %}">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "{{ person.full_name|escapejs }}",
+  "jobTitle": "{{ person.headline|default:''|escapejs }}",
+  "url": "{{ request.build_absolute_uri }}",
+  {% if person.portrait %}"image": "{{ request.scheme }}://{{ request.get_host }}{{ person.portrait.url }}",{% endif %}
+  {% if link %}"worksFor": {
+    "@type": "Organization",
+    "name": "{{ link.company.legal_name|escapejs }}"
+  },{% endif %}
+  "description": "{% if sections.summary %}{{ sections.summary.body_md|excerpt:200|escapejs }}{% endif %}"
+}
+</script>
+{% endblock %}
+{% block content %}
+{% with link=person.primary_link %}
+<div class="container" style="padding-top:24px">
+  <nav class="breadcrumb light" aria-label="Đường dẫn"><a href="{% url 'public:home' %}">Trang chủ</a><span>/</span><a href="{% url 'public:person_list' %}">Doanh nhân</a>{% for s in sectors|slice:":1" %}<span>/</span><a href="{{ s.get_absolute_url }}">{{ s.name }}</a>{% endfor %}<span>/</span><span>{{ person.full_name }}</span></nav>
+
+  {% if person.status != "published" %}<div class="flash flash-warning" style="margin:12px 0">Hồ sơ đang ở trạng thái <b>{{ person.get_status_display }}</b> — chỉ ban biên tập và chính chủ nhìn thấy.</div>{% endif %}
+  {% if person.is_demo %}<div class="flash flash-warning" style="margin:12px 0">Đây là <b>hồ sơ mẫu</b> (nhân vật hư cấu) để minh họa cách trình bày — không phải người thật.</div>{% endif %}
+
+  <div class="row between" style="align-items:flex-end;border-bottom:1px solid var(--line-strong)">
+    <div>
+      <h1 class="serif" style="font-size:40px;font-weight:600">{{ person.full_name }}</h1>
+      {% if person.awards.all %}
+        <div class="row" style="gap:8px;margin:8px 0 10px;flex-wrap:wrap">
+          {% for a in person.awards.all %}
+            <a href="{% url 'public:person_list' %}?danh-hieu={{ a.badge.code }}" class="badge-award badge-{{ a.badge.color }}" style="text-decoration:none" title="{{ a.badge.issuer }}{% if a.citation %} · {{ a.citation }}{% endif %}">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="vertical-align:-2px;margin-right:4px"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+              <b>{{ a.badge.name }}</b>{% if a.year %} ({{ a.year }}){% endif %}{% if a.title %} · {{ a.title }}{% endif %}
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+      <p style="margin:6px 0 16px;color:var(--muted);font-size:15px">{% if link %}{{ link.label }} <a href="{{ link.company.get_absolute_url }}">{{ link.company.display_name }}</a>{% else %}{{ person.headline }}{% endif %}{% for m in person.memberships.all|slice:":1" %} · {{ m.position }} <a href="{{ m.association.get_absolute_url }}">{{ m.association.short_name|default:m.association.name }}</a>{% endfor %}</p>
+    </div>
+    <nav class="page-tabs" aria-label="Các mục của hồ sơ">
+      <a href="{{ person.get_absolute_url }}" aria-current="page">Hồ sơ</a>
+      <a href="{% url 'public:person_history' person.slug %}">Lịch sử sửa đổi</a>
+      <a href="{% url 'public:feedback' %}?chu-de=correction&doi-tuong={{ person.full_name|urlencode }}">Góp ý / Bổ sung</a>
+      <button type="button" class="btn-like-heart" data-like-btn data-type="person" data-id="{{ person.id }}" data-count="{{ person.likes_count|default:0 }}" title="Thả tim cho {{ person.full_name }}" style="padding:4px 12px;font-size:13px">
+        <svg class="heart-icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span class="like-count" data-like-count>{{ person.likes_count|default:0 }}</span>
+      </button>
+      <button type="button" class="tab-share-btn" data-share-url="{{ request.build_absolute_uri }}" title="Chia sẻ hồ sơ hoặc sao chép liên kết">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:-1px;margin-right:4px"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Chia sẻ
+      </button>
+      {% if user.is_editor %}<a href="{% url 'staff:person_edit' person.pk %}">Sửa (biên tập)</a>{% endif %}
+    </nav>
+  </div>
+
+  <div class="layout reverse-mobile">
+    <article class="main card card-lg article prose">
+      {% if person.verification != "none" %}<div class="verified-banner">
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 12l2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span><b>{{ person.get_verification_display }}</b>{% if person.verification_note %} · {{ person.verification_note }}{% endif %}{% if person.verified_at %} · ngày {{ person.verified_at|date:"d/m/Y" }}{% endif %}</span>
+      </div>{% endif %}
+      {% if pending_mine %}<p class="note" style="margin-top:12px">Bạn có một bản đề xuất sửa hồ sơ này đang chờ duyệt.</p>{% endif %}
+
+      <nav class="toc-box" aria-label="Mục lục hồ sơ">
+        <b>Mục lục</b>
+        <ol>
+          {% for s in person.sections.all %}<li><a href="#muc-{{ s.key }}">{{ s.label }}</a></li>{% endfor %}
+          {% if person.milestones.all %}<li><a href="#dau-moc">Dấu mốc sự nghiệp</a></li>{% endif %}
+          {% if person.company_links.all %}<li><a href="#doanh-nghiep">Doanh nghiệp liên quan</a></li>{% endif %}
+          {% if person.memberships.all or person.event_participations.all %}<li><a href="#hiep-hoi">Hiệp hội &amp; sự kiện</a></li>{% endif %}
+          {% if videos %}<li><a href="#video">Video</a></li>{% endif %}
+          {% if person.sources.all %}<li><a href="#nguon">Nguồn tham khảo</a></li>{% endif %}
+        </ol>
+      </nav>
+
+      {% for s in person.sections.all %}
+        <h2 id="muc-{{ s.key }}"{% if forloop.first %} style="margin-top:28px"{% endif %}>{{ s.label }}</h2>
+        {{ s.body_md|md }}
+      {% empty %}
+        <p class="muted" style="margin-top:24px">Hồ sơ chưa có bài viết chi tiết. {% if user.is_authenticated %}<a href="{% url 'member:person_edit' person.slug %}">Đóng góp nội dung →</a>{% endif %}</p>
+      {% endfor %}
+
+      {% if person.milestones.all %}<h2 id="dau-moc">Dấu mốc sự nghiệp</h2>
+      <ol class="timeline">
+        {% for m in person.milestones.all %}<li><div class="year">{{ m.year }}</div><div>{{ m.title }}{% if m.source_url %} <a href="{{ m.source_url }}" target="_blank" rel="noopener nofollow" class="small">[nguồn]</a>{% endif %}</div></li>{% endfor %}
+        {% if link %}<li class="is-now"><div class="year">Hiện nay</div><div>{{ link.label }} <a href="{{ link.company.get_absolute_url }}">{{ link.company.display_name }}</a></div></li>{% endif %}
+      </ol>{% endif %}
+
+      {% if person.company_links.all %}<h2 id="doanh-nghiep">Doanh nghiệp liên quan</h2>
+      <div class="grid grid-auto-260">
+        {% for l in person.company_links.all %}{% if l.company.status == "published" %}<a class="card card-link" href="{{ l.company.get_absolute_url }}"><div style="font-weight:600">{{ l.company.display_name }}</div><div class="small muted">{{ l.label }}{% if l.start_year %} · từ {{ l.start_year }}{% endif %}{% if l.company.tax_code %} · MST {{ l.company.tax_code }}{% endif %}{% if l.company.primary_sector %} · {{ l.company.primary_sector.name }}{% endif %}</div></a>
+        {% else %}<div class="card"><div style="font-weight:600">{{ l.company.display_name }}</div><div class="small muted">{{ l.label }} · trang doanh nghiệp đang được biên tập</div></div>{% endif %}{% endfor %}
+      </div>{% endif %}
+
+      {% if person.memberships.all or person.event_participations.all %}<h2 id="hiep-hoi">Hiệp hội &amp; sự kiện</h2>
+      <ul>
+        {% for m in person.memberships.all %}<li>{{ m.position }} — <a href="{{ m.association.get_absolute_url }}">{{ m.association.name }}</a>{% if m.start_year %} (từ {{ m.start_year }}){% endif %}</li>{% endfor %}
+        {% for ep in person.event_participations.all %}{% if ep.event.status != "draft" %}<li>{{ ep.get_role_display }}{% if ep.note %} ({{ ep.note }}){% endif %} tại <a href="{{ ep.event.get_absolute_url }}">{{ ep.event.title }}</a>, {{ ep.event.starts_at|date:"m/Y" }}</li>{% endif %}{% endfor %}
+      </ul>{% endif %}
+
+      <div id="video">{% include "partials/video_section.html" with more_url=None %}</div>
+
+      {% if person.sources.all %}<h2 id="nguon">Nguồn tham khảo</h2>
+      <ol class="sources">
+        {% for s in person.sources.all %}<li id="nguon-{{ s.number }}">{% if s.url %}<a href="{{ s.url }}" target="_blank" rel="noopener nofollow">{{ s.title }}</a>{% else %}{{ s.title }}{% endif %} <span class="small muted">· {{ s.get_kind_display }}</span></li>{% endfor %}
+      </ol>{% endif %}
+    </article>
+
+    <aside class="aside">
+      <div class="card infobox">
+        <div class="portrait">{% if person.portrait %}<img src="{{ person.portrait.url }}" alt="Chân dung {{ person.full_name }}">{% else %}<span class="serif" style="font-size:56px;color:var(--gold-dark)">{{ person.initials }}</span>{% endif %}</div>
+        <dl>
+          {% if person.birth_year and person.show_birth_year %}<dt>Năm sinh</dt><dd>{{ person.birth_year }}</dd>{% endif %}
+          {% if person.hometown and person.show_hometown %}<dt>Quê quán</dt><dd>{{ person.hometown.name }}</dd>{% endif %}
+          {% if person.current_province %}<dt>Hoạt động tại</dt><dd>{{ person.current_province.name }}</dd>{% endif %}
+          {% if link %}<dt>Chức vụ</dt><dd>{{ link.label }} <a href="{{ link.company.get_absolute_url }}">{{ link.company.display_name }}</a></dd>{% endif %}
+          {% if sectors %}<dt>Ngành</dt><dd>{% for s in sectors %}<a href="{{ s.get_absolute_url }}">{{ s.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
+          {% for m in person.memberships.all %}{% if forloop.first %}<dt>Hiệp hội</dt><dd>{% endif %}<a href="{{ m.association.get_absolute_url }}">{{ m.association.short_name|default:m.association.name }}</a>, {{ m.position }}{% if forloop.last %}</dd>{% else %}<br>{% endif %}{% endfor %}
+          {% if person.website %}<dt>Website</dt><dd><a href="{{ person.website }}" rel="noopener nofollow" target="_blank">{{ person.website|cut:"https://"|cut:"http://"|truncatechars:32 }}</a></dd>{% endif %}
+          {% if person.display_phone %}
+          <dt>Điện thoại</dt>
+          <dd style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span class="phone-masked-val" id="phone-val-{{ person.pk }}" style="font-family:monospace;letter-spacing:0.5px">{{ person.masked_phone }}</span>
+            <span class="chip chip-sm" style="font-size:11px;background:var(--bg-subtle, #f1f5f9);color:var(--text-muted, #64748b);padding:1px 6px;border-radius:4px" title="Số điện thoại được bảo mật, không hiển thị công khai">🔒 Bảo mật</span>
+            {% if request.user.is_authenticated and request.user.role == 'admin' or request.user.is_superuser %}
+            <button type="button" class="btn btn-outline btn-sm btn-reveal-phone" id="btn-reveal-{{ person.pk }}" data-pk="{{ person.pk }}" data-url="{% url 'public:person_reveal_phone' person.pk %}" style="padding:2px 8px;font-size:11px;line-height:1.3;cursor:pointer">
+              👁️ Mở xem
+            </button>
+            {% endif %}
+          </dd>
+          {% endif %}
+          {% if person.email_public and person.show_email %}<dt>Liên hệ</dt><dd><a href="mailto:{{ person.email_public }}">{{ person.email_public }}</a></dd>{% endif %}
+        </dl>
+      </div>
+
+      <div class="card">
+        <div class="row between" style="font-size:14px;font-weight:600"><span>Độ đầy đủ hồ sơ</span><span>{{ completeness }}%</span></div>
+        <div class="progress" style="margin-top:10px"><span style="width:{{ completeness }}%"></span></div>
+        {% if missing %}<p class="small muted" style="margin-top:10px">Còn thiếu: {{ missing|join:", "|lower }}.</p>{% endif %}
+      </div>
+
+      <div class="card small" style="color:var(--muted);line-height:1.6">
+        <div style="font-weight:600;color:var(--ink);font-size:14px;margin-bottom:6px">Thông tin phiên bản</div>
+        {% if last_rev %}Bản sửa #{{ last_rev.revision_no }} · cập nhật {{ last_rev.reviewed_at|date:"d/m/Y" }}<br>Người sửa: {{ last_rev.author_label|lower }} · Duyệt: Ban biên tập<br>{% else %}Cập nhật {{ person.updated_at|date:"d/m/Y" }}<br>{% endif %}
+        <a href="{% url 'public:person_history' person.slug %}">Xem lịch sử</a> · <button type="button" class="linklike" data-copy="{{ person.full_name }}. doanhnhan.wiki, {% now 'd/m/Y' %}. {{ SITE_URL }}{{ person.get_absolute_url }}">Trích dẫn trang này</button>
+      </div>
+
+      <a class="btn btn-gold btn-block" href="{% url 'public:feedback' %}?chu-de=correction&doi-tuong={{ person.full_name|urlencode }}" style="display:flex;align-items:center;justify-content:center;gap:8px">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Góp ý / Báo thông tin cần cập nhật
+      </a>
+      <a class="btn btn-outline btn-block" href="{% url 'public:person_print' person.slug %}" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:-3px;margin-right:6px"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+        Tải PDF tóm tắt / In hồ sơ
+      </a>
+      <a class="btn btn-outline btn-block" href="{% url 'public:contact' %}">Đăng ký ghi hình, phỏng vấn</a>
+    </aside>
+  </div>
+</div>
+{% endwith %}
+{% endblock %}

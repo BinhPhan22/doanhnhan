@@ -1,0 +1,5 @@
+Liên hệ mới ({{ obj.get_topic_display }}) từ {{ obj.full_name }} <{{ obj.email }}>
+
+{{ obj.message }}
+
+Xem tại: {{ site_url }}/quan-tri/lien-he/{{ obj.pk }}/

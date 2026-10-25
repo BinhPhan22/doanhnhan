@@ -1,0 +1,4 @@
+Đăng ký tài khoản mới: {{ user.full_name }} <{{ user.email }}>
+Tư cách: {{ app.get_applicant_type_display }} {% if app.organization %}· {{ app.organization }}{% endif %}
+
+Duyệt tại: {{ site_url }}/quan-tri/tai-khoan/

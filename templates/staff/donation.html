@@ -1,0 +1,31 @@
+{% extends "staff/base.html" %}
+{% block title %}Trang tài trợ{% endblock %}
+{% block content %}
+<div class="row between"><h1 class="admin-title">Trang tài trợ (Donate)</h1><a class="btn btn-outline btn-sm" href="{% url 'public:donate' %}" target="_blank">Xem trang ↗</a></div>
+<div class="layout" style="padding-top:20px;padding-bottom:0">
+  <form class="main card stack" method="post" style="gap:14px">{% csrf_token %}
+    <h2 class="card-title" style="margin:0">Bài viết kêu gọi</h2>
+    {% for field in form %}{% include "partials/field.html" %}{% endfor %}
+    <div><button class="btn btn-gold" type="submit">Lưu nội dung</button></div>
+  </form>
+  <aside class="aside" style="flex:1 1 380px">
+    <div class="card">
+      <h2 class="card-title">Tài khoản nhận tài trợ</h2>
+      <p class="small muted" style="margin-bottom:12px">Để chống gian lận, tài khoản mới hoặc thay thế chỉ hiển thị sau khi <b>một quản trị viên khác</b> duyệt. Mọi thao tác được ghi nhật ký.</p>
+      <ul class="list-plain">{% for a in accounts %}<li>
+        <div class="row between"><b>{{ a.bank_name }} · {{ a.account_number }}</b><span class="status-pill {% if a.state == 'active' %}active{% elif a.state == 'pending' %}pending{% else %}retired{% endif %}">{{ a.get_state_display }}</span></div>
+        <div class="small muted">{{ a.account_holder }} · tạo bởi {{ a.created_by.email|default:"—" }}{% if a.approved_by %} · duyệt bởi {{ a.approved_by.email }}{% endif %}{% if a.replaces %} · thay cho {{ a.replaces.account_number }}{% endif %}</div>
+        <form method="post" action="{% url 'staff:donation_account_decide' a.pk %}" class="row" style="gap:6px;margin-top:6px">{% csrf_token %}
+          {% if a.state == "pending" and a.created_by_id != user.pk %}<button class="btn btn-dark btn-sm" name="action" value="approve">Duyệt hiển thị</button>{% elif a.state == "pending" %}<span class="small muted">Chờ quản trị viên khác duyệt</span>{% endif %}
+          {% if a.state != "retired" %}<button class="btn btn-outline btn-sm" name="action" value="retire" onclick="return confirm('Ngừng hiển thị tài khoản này?')">Ngừng</button>{% endif %}</form>
+      </li>{% empty %}<li class="muted">Chưa có tài khoản.</li>{% endfor %}</ul>
+    </div>
+    <form class="card stack" method="post" action="{% url 'staff:donation_account_new' %}" enctype="multipart/form-data" style="gap:12px">{% csrf_token %}
+      <h2 class="card-title" style="margin:0">Thêm / thay tài khoản</h2>
+      {% for field in account_form %}{% include "partials/field.html" %}{% endfor %}
+      <div class="field"><label for="replaces">Thay thế cho</label><select id="replaces" name="replaces" class="select"><option value="">— Thêm mới, không thay —</option>{% for a in accounts %}{% if a.state == "active" %}<option value="{{ a.pk }}">{{ a.bank_name }} · {{ a.account_number }}</option>{% endif %}{% endfor %}</select></div>
+      <button class="btn btn-dark" type="submit">Gửi duyệt</button>
+    </form>
+  </aside>
+</div>
+{% endblock %}

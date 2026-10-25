@@ -1,0 +1,17 @@
+{% extends "staff/base.html" %}
+{% block title %}Sự kiện{% endblock %}
+{% block content %}
+<div class="row between"><h1 class="admin-title">Sự kiện</h1><a class="btn btn-dark" href="{% url 'staff:event_new' %}">+ Thêm sự kiện</a></div>
+<div style="margin-top:20px">{% include "staff/_search.html" with placeholder="Tên sự kiện…" %}</div>
+<div class="card" style="padding:0"><div class="table-wrap"><table class="table admin-table">
+  <thead><tr><th>Sự kiện</th><th>Thời gian</th><th>Tổ chức</th><th>Người tham gia</th><th>Trạng thái</th><th></th></tr></thead>
+  <tbody>{% for e in page %}<tr><td><b>{{ e.title }}</b><span class="small muted">{{ e.get_kind_display }}</span></td><td>{{ e.starts_at|date:"d/m/Y H:i" }}</td><td>{{ e.organizer_name|default:"—" }}</td><td>{{ e.n }}</td><td><span class="status-pill {{ e.status }}">{{ e.get_status_display }}</span></td>
+    <td style="white-space:nowrap">
+      <a class="btn btn-dark btn-sm" href="{% url 'staff:event_edit' e.pk %}">Sửa</a>
+      <a class="btn btn-outline btn-sm" href="{{ e.get_absolute_url }}" target="_blank">Xem</a>
+      <form method="post" action="{% url 'staff:event_toggle_status' e.pk %}" style="display:inline">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-outline btn-sm" type="submit">{% if e.status == 'archived' %}Bỏ ẩn{% else %}Ẩn{% endif %}</button></form>
+      <form method="post" action="{% url 'staff:event_delete' e.pk %}" style="display:inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn sự kiện {{ e.title|escapejs }}?')">{% csrf_token %}<button class="btn btn-danger btn-sm" type="submit">Xóa</button></form>
+    </td></tr>
+  {% empty %}<tr><td colspan="6" class="empty-state">Chưa có sự kiện.</td></tr>{% endfor %}</tbody></table></div></div>
+{% paginate page %}
+{% endblock %}

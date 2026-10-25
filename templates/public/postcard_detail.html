@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load static dnw %}
+{% block title %}{{ postcard.title }} – Postcard Danh ngôn Doanh nhân – doanhnhan.wiki{% endblock %}
+{% block description %}“{{ postcard.quote|truncatechars:150 }}” — {{ postcard.display_author_name }}{% endblock %}
+
+{% block content %}
+<div class="container section" style="padding-top:32px;max-width:960px">
+  <div style="margin-bottom:20px">
+    <a href="{% url 'public:postcard_list' %}" class="small font-medium" style="color:var(--brand-primary);display:inline-flex;align-items:center;gap:6px">
+      ← Quay lại thư viện Bưu thiếp Postcard
+    </a>
+  </div>
+
+  <div class="card postcard-detail-card" style="padding:0;overflow:hidden">
+    <div class="row" style="align-items:stretch;margin:0">
+      <div style="flex:1.2;min-width:320px;background:#0B1A2E;display:flex;align-items:center;justify-content:center;padding:24px">
+        {% if postcard.image %}
+          <img src="{{ postcard.image.url }}" alt="{{ postcard.title }}" style="max-width:100%;max-height:550px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.4)">
+        {% else %}
+          <div class="postcard-artistic-frame" style="width:100%;min-height:420px">
+            <div class="artistic-quote-mark">“</div>
+            <blockquote class="artistic-quote-text" style="font-size:20px;line-height:1.7">
+              {{ postcard.quote }}
+            </blockquote>
+            <div class="artistic-author-block">
+              <div class="artistic-author-name">— {{ postcard.display_author_name }}</div>
+              {% if postcard.display_author_title %}
+                <div class="artistic-author-title">{{ postcard.display_author_title }}</div>
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <div style="flex:1;min-width:280px;padding:32px;display:flex;flex-direction:column;justify-content:space-between">
+        <div>
+          <span class="chip chip-outline" style="margin-bottom:12px;display:inline-block">
+            {{ postcard.get_topic_display }}
+          </span>
+          <h1 style="font-size:24px;margin-bottom:16px;color:var(--ink)">{{ postcard.title }}</h1>
+
+          <div style="background:#F8FAFC;border-left:4px solid var(--gold);padding:14px 16px;border-radius:4px;margin-bottom:20px">
+            <p style="font-size:16px;font-style:italic;color:var(--ink);line-height:1.6;margin:0">
+              “{{ postcard.quote }}”
+            </p>
+          </div>
+
+          <div style="margin-bottom:20px">
+            {% if postcard.person %}
+              <div style="font-weight:700;font-size:16px">
+                <a href="{{ postcard.person.get_absolute_url }}" style="color:var(--ink)">
+                  👤 {{ postcard.person.full_name }}
+                </a>
+              </div>
+            {% else %}
+              <div style="font-weight:700;font-size:16px;color:var(--ink)">
+                👤 {{ postcard.display_author_name }}
+              </div>
+            {% endif %}
+
+            {% if postcard.display_author_title %}
+              <div class="small muted" style="margin-top:2px">{{ postcard.display_author_title }}</div>
+            {% endif %}
+
+            {% if postcard.company %}
+              <div class="small" style="margin-top:4px">
+                🏢 Doanh nghiệp: <a href="{{ postcard.company.get_absolute_url }}">{{ postcard.company.display_name }}</a>
+              </div>
+            {% endif %}
+
+            {% if postcard.context %}
+              <div class="small muted" style="margin-top:8px">
+                📍 Bối cảnh: {{ postcard.context }}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div style="border-top:1px solid #E2E8F0;padding-top:20px;display:flex;flex-direction:column;gap:10px">
+          <button type="button" class="btn btn-outline" style="width:100%" onclick="copyQuoteText('{{ postcard.quote|escapejs }} — {{ postcard.display_author_name|escapejs }}', this)">
+            📋 Sao chép câu danh ngôn
+          </button>
+          {% if postcard.image %}
+            <a href="{% url 'public:postcard_download' postcard.slug %}" class="btn btn-gold" style="width:100%" download>
+              📥 Tải ảnh bưu thiếp chất lượng cao
+            </a>
+          {% endif %}
+          <div class="small muted" style="text-align:center;margin-top:4px">
+            👁️ {{ postcard.views_count }} lượt xem · 📥 {{ postcard.downloads_count }} lượt tải
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if related_postcards %}
+    <div style="margin-top:48px">
+      <h3 style="margin-bottom:20px">Danh ngôn cùng chủ đề</h3>
+      <div class="postcard-grid">
+        {% for p in related_postcards %}
+          <article class="postcard-card card">
+            <div class="postcard-visual-wrap">
+              {% if p.image %}
+                <img src="{{ p.image.url }}" alt="{{ p.title }}" class="postcard-img" loading="lazy">
+              {% else %}
+                <div class="postcard-artistic-frame">
+                  <div class="artistic-quote-mark">“</div>
+                  <blockquote class="artistic-quote-text" style="font-size:14px">
+                    {{ p.quote|truncatechars:100 }}
+                  </blockquote>
+                  <div class="artistic-author-block">
+                    <div class="artistic-author-name">— {{ p.display_author_name }}</div>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+            <div class="postcard-content">
+              <h4 class="postcard-title" style="font-size:15px">
+                <a href="{% url 'public:postcard_detail' p.slug %}">{{ p.title }}</a>
+              </h4>
+              <p class="postcard-quote-excerpt" style="font-size:13px">
+                “{{ p.quote|truncatechars:90 }}”
+              </p>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+function copyQuoteText(text, btnEl) {
+  navigator.clipboard.writeText(text).then(function() {
+    const orig = btnEl.innerHTML;
+    btnEl.innerHTML = '<span>✓ Đã sao chép vào bộ nhớ</span>';
+    btnEl.classList.add('btn-copied');
+    setTimeout(function() {
+      btnEl.innerHTML = orig;
+      btnEl.classList.remove('btn-copied');
+    }, 2000);
+  });
+}
+</script>
+{% endblock %}

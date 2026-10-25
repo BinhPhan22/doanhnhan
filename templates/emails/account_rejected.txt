@@ -1,0 +1,9 @@
+Chào {{ user.full_name }},
+
+Rất tiếc, đăng ký tài khoản của bạn trên doanhnhan.wiki chưa được chấp thuận.
+Lý do: {{ note }}
+
+Nếu cho rằng có nhầm lẫn, vui lòng liên hệ: {{ site_url }}/lien-he/gop-y/
+
+Trân trọng,
+Ban vận hành doanhnhan.wiki

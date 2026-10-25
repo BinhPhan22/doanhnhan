@@ -1,0 +1,140 @@
+{% extends "staff/base.html" %}
+{% load dnw %}
+{% block title %}Bưu thiếp danh ngôn (Postcard) – Quản trị{% endblock %}
+{% block content %}
+<div class="row between" style="align-items:center;margin-bottom:18px">
+  <div>
+    <h1 class="admin-title">Bưu thiếp danh ngôn (Postcard)</h1>
+    <p class="muted small">Quản lý bưu thiếp danh ngôn, triết lý kinh doanh và bài học truyền cảm hứng của các doanh nhân.</p>
+  </div>
+  <a class="btn btn-gold" href="{% url 'staff:postcard_new' %}">+ Thêm bưu thiếp mới</a>
+</div>
+
+<!-- Lọc & Tìm kiếm -->
+<div class="card" style="padding:14px 18px;margin-bottom:18px">
+  <form method="get" class="row" style="gap:10px;align-items:center;flex-wrap:wrap">
+    <div style="flex:1;min-width:220px">
+      <input type="search" name="q" value="{{ q }}" placeholder="Tìm theo tiêu đề, danh ngôn, tác giả..." class="input" style="width:100%">
+    </div>
+    <div style="min-width:180px">
+      <select name="chu-de" class="select" style="width:100%">
+        <option value="">— Tất cả chủ đề —</option>
+        {% for val, label in topics %}
+          <option value="{{ val }}"{% if topic == val %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="min-width:160px">
+      <select name="trang-thai" class="select" style="width:100%">
+        <option value="">— Tất cả trạng thái —</option>
+        {% for val, label in statuses %}
+          <option value="{{ val }}"{% if status == val %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-dark" style="min-height:38px">Lọc</button>
+    {% if q or topic or status %}
+      <a href="{% url 'staff:postcard_list' %}" class="btn btn-sm btn-outline" style="min-height:38px">Xóa lọc</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Bảng bưu thiếp -->
+<div class="card" style="padding:0">
+  <div class="table-wrap">
+    <table class="table admin-table">
+      <thead>
+        <tr>
+          <th style="width:70px">Ảnh</th>
+          <th>Danh ngôn / Thông điệp</th>
+          <th>Tác giả / Doanh nhân</th>
+          <th>Chủ đề</th>
+          <th style="text-align:center">Xem / Tải</th>
+          <th>Trạng thái</th>
+          <th style="text-align:right">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in page %}
+          <tr>
+            <td>
+              {% if p.image %}
+                <img src="{{ p.image.url }}" alt="{{ p.title }}" style="width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0">
+              {% else %}
+                <div style="width:56px;height:56px;background:linear-gradient(135deg,#0B1A2E,#1A2B49);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#D4AF37;font-size:22px;font-family:serif">❝</div>
+              {% endif %}
+            </td>
+            <td>
+              <div style="font-weight:600;font-size:14px;color:var(--ink)">
+                {{ p.title }}
+                {% if p.is_featured %}
+                  <span class="chip chip-solid-gold" style="font-size:11px;padding:1px 6px;margin-left:4px">Nổi bật</span>
+                {% endif %}
+              </div>
+              <div class="small muted" style="margin-top:3px;max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                “{{ p.quote }}”
+              </div>
+              {% if p.context %}
+                <div class="small text-muted" style="font-size:11px;color:#718096;margin-top:2px">
+                  📍 {{ p.context }}
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              {% if p.person %}
+                <a href="{% url 'staff:person_edit' p.person.pk %}" class="small font-medium" style="color:var(--brand-primary)">
+                  👤 {{ p.person.full_name }}
+                </a>
+              {% else %}
+                <span class="small font-medium">{{ p.display_author_name }}</span>
+              {% endif %}
+              {% if p.display_author_title %}
+                <div class="small muted" style="font-size:11px">{{ p.display_author_title }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <span class="chip chip-outline" style="font-size:11px">{{ p.get_topic_display }}</span>
+            </td>
+            <td style="text-align:center" class="small muted">
+              <div>👁️ {{ p.views_count }}</div>
+              <div>📥 {{ p.downloads_count }}</div>
+            </td>
+            <td>
+              {% if p.status == 'published' %}
+                <span class="badge badge-success">Đã xuất bản</span>
+              {% elif p.status == 'draft' %}
+                <span class="badge badge-warning">Bản nháp</span>
+              {% else %}
+                <span class="badge badge-muted">Đã ẩn</span>
+              {% endif %}
+            </td>
+            <td style="text-align:right;white-space:nowrap">
+              <a href="{% url 'public:postcard_detail' p.slug %}" class="btn btn-xs btn-outline" target="_blank" title="Xem trên web">Xem</a>
+              <a href="{% url 'staff:postcard_edit' p.pk %}" class="btn btn-xs btn-outline">Sửa</a>
+              <form method="post" action="{% url 'staff:postcard_toggle_status' p.pk %}" style="display:inline">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button type="submit" class="btn btn-xs btn-ghost" title="Chuyển trạng thái Ẩn/Hiện">
+                  {% if p.status == 'archived' %}Bỏ ẩn{% else %}Ẩn{% endif %}
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" style="text-align:center;padding:36px;color:#718096">
+              Chưa có bưu thiếp nào. Nhấn <strong>"+ Thêm bưu thiếp mới"</strong> để đăng tải danh ngôn đầu tiên!
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if page.has_other_pages %}
+  <div style="margin-top:16px;display:flex;justify-content:center">
+    {% include "partials/pagination.html" with page_obj=page %}
+  </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ sector.name }} – Ngành nghề – doanhnhan.wiki{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Đường dẫn"><a href="{% url 'public:home' %}">Trang chủ</a><span>/</span><a href="{% url 'public:sector_list' %}">Ngành nghề</a><span>/</span>{% if child %}<a href="{{ sector.get_absolute_url }}">{{ sector.name }}</a><span>/</span><span>{{ child.name }}</span>{% else %}<span>{{ sector.name }}</span>{% endif %}</nav>
+    <div class="hero-split">
+      <div class="grow" style="display:flex;gap:20px;align-items:flex-start">
+        <div class="sector-icon" style="width:72px;height:72px;flex:none" aria-hidden="true"><svg viewBox="0 0 24 24" style="width:34px;height:34px"><path d="{{ sector.icon_path }}"/></svg></div>
+        <div>
+          <h1>{{ child.name|default:sector.name }}</h1>
+          <p class="lead" style="font-size:16px;margin-top:10px">{{ child.description|default:sector.description }}</p>
+          {% with code=child.vsic_code|default:sector.vsic_code %}{% if code %}<p class="small" style="margin-top:8px;color:var(--on-dark)">Mã ngành VSIC 2025 (cấp 2): {{ code }}</p>{% endif %}{% endwith %}
+        </div>
+      </div>
+      <div class="stats cols-3">
+        <div class="stat"><div class="stat-value" style="font-size:24px">{{ people_count }}</div><div class="stat-label">Doanh nhân</div></div>
+        <div class="stat"><div class="stat-value" style="font-size:24px">{{ company_count }}</div><div class="stat-label">Doanh nghiệp</div></div>
+        <div class="stat"><div class="stat-value" style="font-size:24px">{{ province_count }}</div><div class="stat-label">Tỉnh thành</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+{% if children %}<div class="container" style="padding-top:28px">
+  <div class="chips" role="group" aria-label="Phân ngành">
+    <span class="small muted" style="font-weight:600;padding:8px 4px 8px 0">Phân ngành:</span>
+    <a class="chip chip-lg{% if not child %} chip-dark{% endif %}" href="{{ sector.get_absolute_url }}">Tất cả</a>
+    {% for c in children %}<a class="chip chip-lg{% if child.pk == c.pk %} chip-dark{% endif %}" href="{{ c.get_absolute_url }}">{{ c.name }}</a>{% endfor %}
+  </div>
+</div>{% endif %}
+<div class="container layout">
+  <div class="main">
+    <div class="section-head" style="margin-bottom:16px"><h2 class="section-title sm">Doanh nhân tiêu biểu trong ngành</h2>{% if people_count > 12 %}<a class="link-more" href="{% url 'public:person_list' %}?nganh={{ child.slug|default:sector.slug }}">Xem tất cả {{ people_count }} →</a>{% endif %}</div>
+    <div class="grid grid-auto-260">{% for p in people %}{% with l=p.primary_link %}{% if l %}{% include "partials/person_mini.html" with role=l.label|add:" · "|add:l.company.display_name extra=l.company.primary_sector.name %}{% else %}{% include "partials/person_mini.html" %}{% endif %}{% endwith %}{% empty %}<p class="muted">Chưa có hồ sơ doanh nhân trong ngành này.</p>{% endfor %}</div>
+
+    <h2 class="section-title sm" style="margin:36px 0 16px">Doanh nghiệp trong ngành</h2>
+    {% if companies %}<div class="table-wrap"><table class="table">
+      <thead><tr><th scope="col">Doanh nghiệp</th><th scope="col">Phân ngành</th><th scope="col">Tỉnh / thành</th><th scope="col">Người sáng lập</th></tr></thead>
+      <tbody>{% for c in companies %}<tr><td><a href="{{ c.get_absolute_url }}"><b>{{ c.display_name }}</b></a></td><td>{{ c.primary_sector.name|default:"—" }}</td><td>{{ c.province.name|default:"—" }}</td><td>{% for l in c.person_links.all|slice:":2" %}<a href="{{ l.person.get_absolute_url }}">{{ l.person.full_name }}</a>{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</td></tr>{% endfor %}</tbody>
+    </table></div>{% else %}<p class="muted">Chưa có doanh nghiệp.</p>{% endif %}
+  </div>
+  <aside class="aside">
+    {% if provinces %}<div class="card"><h2 class="card-title">Phân bố theo tỉnh thành</h2>
+      <div class="bars">{% for p in provinces %}<div><div class="row between"><a href="{% url 'public:company_list' %}?nganh={{ sector.slug }}&tinh={{ p.province__code }}">{{ p.province__name }}</a><span class="muted">{{ p.n }}</span></div><div class="bar-track"><span style="width:{{ p.pct }}%"></span></div></div>{% endfor %}</div>
+    </div>{% endif %}
+    {% if associations %}<div class="card"><h2 class="card-title">Hiệp hội liên quan</h2><ul class="list-plain">{% for a in associations %}<li><a href="{{ a.get_absolute_url }}"><b>{{ a.name }}</b></a></li>{% endfor %}</ul></div>{% endif %}
+    <div class="card card-dark"><h2 class="card-title">Sự kiện của ngành</h2>
+      {% for e in events %}<p style="font-size:14px;margin-bottom:12px"><a href="{{ e.get_absolute_url }}" style="color:#fff;font-weight:600">{{ e.title }}</a><br>{{ e.starts_at|date:"d/m" }}{% if e.venue %} · {{ e.venue }}{% endif %}</p>{% empty %}<p style="font-size:14px;margin-bottom:12px">Chưa có sự kiện sắp tới.</p>{% endfor %}
+      <a href="{% url 'public:event_list' %}" style="color:var(--gold-light);font-weight:600;font-size:14px">Xem lịch sự kiện →</a></div>
+  </aside>
+</div>
+{% endblock %}

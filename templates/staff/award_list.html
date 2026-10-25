@@ -1,0 +1,103 @@
+{% extends "staff/base.html" %}
+{% load dnw %}
+{% block title %}Danh hiệu & Giải thưởng{% endblock %}
+{% block content %}
+<div class="row between" style="align-items:center">
+  <div>
+    <h1 class="admin-title">Danh hiệu &amp; Giải thưởng</h1>
+    <p class="muted" style="margin-top:6px">Quản lý các danh hiệu vinh danh (Sao Đỏ, Khởi nghiệp xuất sắc, Doanh nhân tiêu biểu...) và danh sách doanh nhân được trao giải.</p>
+  </div>
+  <a class="btn btn-gold" href="{% url 'staff:award_new' %}">+ Thêm danh hiệu mới</a>
+</div>
+
+<form class="toolbar" style="margin-top:20px" method="get">
+  <div class="field" style="min-width:260px">
+    <label for="q">Tìm kiếm danh hiệu</label>
+    <input id="q" name="q" value="{{ q }}" class="input" type="search" placeholder="Tên giải thưởng, đơn vị trao...">
+  </div>
+  <div class="field">
+    <label for="loai">Phân loại</label>
+    <select id="loai" name="loai" class="select" onchange="this.form.submit()">
+      <option value="">— Tất cả phân loại —</option>
+      {% for code, label in badge_types %}
+        <option value="{{ code }}"{% if badge_type == code %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="btn btn-outline" type="submit">Lọc</button>
+  {% if q or badge_type %}
+    <a class="btn btn-outline" href="{% url 'staff:award_list' %}">Đặt lại</a>
+  {% endif %}
+</form>
+
+<div class="card" style="margin-top:16px;background:var(--sand);border-left:4px solid var(--gold);padding:14px 18px">
+  <div style="font-weight:600;color:var(--ink);font-size:14px">💡 Gán danh hiệu trực tiếp trong hồ sơ:</div>
+  <div class="small muted" style="margin-top:4px;line-height:1.5">
+    Ban biên tập có thể gán danh hiệu trực tiếp khi đang chỉnh sửa bất kỳ hồ sơ nào trong
+    <a href="{% url 'staff:person_list' %}" style="font-weight:600;color:var(--gold-dark)">Danh bạ Doanh nhân</a> hoặc
+    <a href="{% url 'staff:company_list' %}" style="font-weight:600;color:var(--gold-dark)">Danh bạ Doanh nghiệp</a>.
+    Mục <b>“Huy hiệu &amp; Giải thưởng danh dự”</b> có sẵn ngay trong form biên tập với danh sách chọn và năm vinh danh.
+  </div>
+</div>
+
+<div class="card" style="padding:0;margin-top:16px">
+  <div class="table-wrap">
+    <table class="table admin-table">
+      <thead>
+        <tr>
+          <th>Tên giải thưởng / Danh hiệu</th>
+          <th>Mẫu hiển thị</th>
+          <th>Phân loại</th>
+          <th>Đơn vị trao</th>
+          <th style="text-align:center">Đã vinh danh</th>
+          <th style="text-align:right">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in page %}
+        <tr>
+          <td>
+            <a href="{% url 'staff:award_edit' b.pk %}" style="font-weight:600;font-size:15px;color:var(--ink)">{{ b.name }}</a>
+            {% if b.description %}
+              <div class="small muted" style="margin-top:4px;max-width:380px">{{ b.description|truncatewords:20 }}</div>
+            {% endif %}
+            <div class="small muted" style="margin-top:2px">Mã: <code>{{ b.code }}</code></div>
+          </td>
+          <td>
+            <span class="badge-award badge-{{ b.color }}">
+              {% if b.icon == 'star' %}★{% elif b.icon == 'medal' %}🎖️{% elif b.icon == 'award' %}🏆{% else %}🏵️{% endif %} {{ b.name }}
+            </span>
+          </td>
+          <td>
+            <span class="status-pill open">{{ b.get_badge_type_display }}</span>
+          </td>
+          <td class="small">{{ b.issuer|default:"—" }}</td>
+          <td style="text-align:center">
+            <a href="{% url 'staff:award_honors' b.pk %}" class="btn btn-outline btn-sm" title="Xem danh sách hồ sơ nhận giải" style="font-weight:600;font-size:12px;gap:6px">
+              <span>👤 {{ b.awardees_count }}</span> · <span>🏢 {{ b.companies_count }}</span>
+            </a>
+          </td>
+          <td style="text-align:right;white-space:nowrap">
+            <a class="btn btn-dark btn-sm" href="{% url 'staff:award_edit' b.pk %}">Sửa</a>
+            <a class="btn btn-outline btn-sm" href="{% url 'staff:award_honors' b.pk %}">Xem vinh danh</a>
+            <form method="post" action="{% url 'staff:award_delete' b.pk %}" class="inline-form" onsubmit="return confirm('Bạn có chắc chắn muốn xóa danh hiệu “{{ b.name|escapejs }}”?')">
+              {% csrf_token %}
+              <button class="btn btn-danger btn-sm" type="submit">Xóa</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="empty-state">
+            <p>Chưa có danh hiệu nào{% if q or badge_type %} phù hợp với bộ lọc{% endif %}.</p>
+            <p style="margin-top:8px"><a class="btn btn-gold btn-sm" href="{% url 'staff:award_new' %}">+ Thêm danh hiệu đầu tiên</a></p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% paginate page %}
+{% endblock %}

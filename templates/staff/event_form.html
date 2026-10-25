@@ -1,0 +1,18 @@
+{% extends "staff/form.html" %}
+{% block extra_fields %}
+<div class="form-section stack" style="gap:12px">
+  <h2 class="card-title" style="margin:0">Người tham gia (diễn giả, nhà tài trợ, nhận giải…)</h2>
+  <p class="hint">Chỉ chọn doanh nhân đã có hồ sơ. Đánh dấu “Ghi dấu mốc” để thêm sự kiện vào dòng thời gian trên hồ sơ người đó.</p>
+  <datalist id="ds-person"></datalist>
+  <div id="ep-list" class="stack" style="gap:10px">
+    {% for ep in participants %}<div class="repeat-row" data-repeat-row style="grid-template-columns:minmax(0,2fr) 160px minmax(0,2fr) 140px auto">
+      <div class="field"><label>Doanh nhân</label><input name="participant_name" class="input" list="ds-person" data-suggest="person" autocomplete="off" value="{% if ep %}{{ ep.person.full_name }} (#{{ ep.person.pk }}){% endif %}"></div>
+      <div class="field"><label>Vai trò</label><select name="participant_role" class="select">{% for val, lbl in roles %}<option value="{{ val }}"{% if ep.role == val %} selected{% endif %}>{{ lbl }}</option>{% endfor %}</select></div>
+      <div class="field"><label>Ghi chú (tên giải, chủ đề…)</label><input name="participant_note" class="input" value="{{ ep.note|default:'' }}"></div>
+      <div class="field"><label>Ghi dấu mốc</label><select name="participant_milestone" class="select"><option value="0">{% if ep.milestone_id %}Đã ghi{% else %}Không{% endif %}</option><option value="1">Có</option></select></div>
+      {% include "editor/_row_actions.html" %}
+    </div>{% endfor %}
+  </div>
+  <button type="button" class="chip chip-lg chip-dashed" style="align-self:flex-start" data-repeat-add="#ep-list">+ Thêm người tham gia</button>
+</div>
+{% endblock %}

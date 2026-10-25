@@ -1,0 +1,430 @@
+{% load static %}<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trích lục hồ sơ: {{ person.full_name }} – doanhnhan.wiki</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Noto+Serif:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0B1A2E;
+    --gold: #C9A24A;
+    --gold-dark: #8A6A1F;
+    --ink: #111827;
+    --muted: #4B5563;
+    --line: #D1D5DB;
+    --line-soft: #E5E7EB;
+    --bg-soft: #F9FAFB;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background: #E5E7EB;
+    font-size: 13.5px;
+    line-height: 1.55;
+  }
+  .print-page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 20px auto;
+    padding: 16mm 18mm;
+    background: #FFFFFF;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+    position: relative;
+  }
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm;
+  }
+  @media print {
+    body { background: #FFF; }
+    .print-page {
+      width: 100%;
+      min-height: auto;
+      margin: 0;
+      padding: 0;
+      box-shadow: none;
+    }
+    .no-print { display: none !important; }
+  }
+
+  /* Toolbar */
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--navy);
+    color: #FFF;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--gold);
+    color: var(--navy);
+    border: 0;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 9px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .toolbar-btn:hover { background: #E3C77A; }
+  .toolbar-link {
+    color: #E5E7EB;
+    text-decoration: none;
+    font-size: 13.5px;
+  }
+  .toolbar-link:hover { color: #FFF; text-decoration: underline; }
+
+  /* Header hồ sơ */
+  .doc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid var(--navy);
+    padding-bottom: 12px;
+    margin-bottom: 18px;
+  }
+  .brand-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--gold-dark);
+  }
+  .doc-title {
+    font-family: 'Noto Serif', serif;
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--navy);
+    margin: 4px 0 2px;
+  }
+  .doc-meta {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* Profile overview */
+  .profile-hero {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    background: var(--bg-soft);
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  .profile-portrait {
+    width: 110px;
+    height: 135px;
+    border-radius: 6px;
+    object-fit: cover;
+    border: 1px solid var(--line);
+    background: #FFF;
+    flex-shrink: 0;
+  }
+  .profile-initials {
+    width: 110px;
+    height: 135px;
+    border-radius: 6px;
+    background: var(--navy);
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    font-family: 'Noto Serif', serif;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .profile-name {
+    font-family: 'Noto Serif', serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--navy);
+    margin: 0 0 4px;
+  }
+  .profile-headline {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gold-dark);
+    margin-bottom: 8px;
+  }
+  .grid-info {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 16px;
+    font-size: 12.5px;
+  }
+  .grid-info dt { color: var(--muted); font-weight: 500; }
+  .grid-info dd { margin: 0; font-weight: 600; color: var(--ink); }
+
+  /* Badge pills */
+  .badge-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .badge-pill {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #FEF3C7;
+    color: #92400E;
+    border: 1px solid #FCD34D;
+  }
+  .badge-pill.verified {
+    background: #D1FAE5;
+    color: #065F46;
+    border-color: #6EE7B7;
+  }
+
+  /* Sections */
+  .section-block {
+    margin-bottom: 18px;
+  }
+  .section-title {
+    font-family: 'Noto Serif', serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--navy);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 4px;
+    margin: 0 0 8px;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+  .section-body {
+    font-size: 13px;
+    text-align: justify;
+  }
+  .section-body p { margin: 0 0 8px; }
+
+  /* Milestone table */
+  .table-clean {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 6px;
+  }
+  .table-clean th, .table-clean td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--line-soft);
+    text-align: left;
+  }
+  .table-clean th {
+    background: var(--bg-soft);
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .table-clean .col-year { width: 70px; font-weight: 700; color: var(--gold-dark); }
+
+  /* Footer */
+  .doc-footer {
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+    margin-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    font-size: 11px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <div>
+    <span style="font-weight:700">Trích lục hồ sơ: {{ person.full_name }}</span>
+    <span style="opacity:.7;font-size:12px;margin-left:8px">(Định dạng chuẩn A4 để in hoặc xuất PDF)</span>
+  </div>
+  <div style="display:flex;gap:16px;align-items:center">
+    <a class="toolbar-link" href="{{ person.get_absolute_url }}">← Quay lại hồ sơ web</a>
+    <button class="toolbar-btn" type="button" onclick="window.print()">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+      Lưu file PDF / In ngay
+    </button>
+  </div>
+</div>
+
+<div class="print-page">
+  <header class="doc-header">
+    <div>
+      <div class="brand-title">Bách khoa toàn thư Doanh nhân trẻ Việt Nam · doanhnhan.wiki</div>
+      <h1 class="doc-title">TRÍCH LỤC HỒ SƠ DOANH NHÂN</h1>
+      <div class="doc-meta">Mã định danh: <b>{{ person.slug }}</b> &nbsp;|&nbsp; Ngày kết xuất: {% now "d/m/Y H:i" %}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-weight:700;color:var(--navy);font-size:13px">HỒ SƠ CÔNG BỐ</div>
+      <div class="doc-meta">Xác thực: {{ SITE_URL }}{{ person.get_absolute_url }}</div>
+    </div>
+  </header>
+
+  <div class="profile-hero">
+    {% if person.portrait %}
+      <img class="profile-portrait" src="{{ person.portrait.url }}" alt="{{ person.full_name }}">
+    {% else %}
+      <div class="profile-initials">{{ person.initials }}</div>
+    {% endif %}
+    <div style="flex:1">
+      <h2 class="profile-name">{{ person.full_name }}</h2>
+      <div class="profile-headline">
+        {% if primary_link %}
+          {{ primary_link.label }} – {{ primary_link.company.display_name }}
+        {% else %}
+          {{ person.headline|default:"Doanh nhân tiêu biểu" }}
+        {% endif %}
+      </div>
+
+      <dl class="grid-info">
+        {% if person.birth_year and person.show_birth_year %}
+          <div><dt>Năm sinh:</dt><dd>{{ person.birth_year }}</dd></div>
+        {% endif %}
+        {% if person.hometown and person.show_hometown %}
+          <div><dt>Quê quán:</dt><dd>{{ person.hometown.name }}</dd></div>
+        {% endif %}
+        {% if person.current_province %}
+          <div><dt>Địa bàn hoạt động:</dt><dd>{{ person.current_province.name }}</dd></div>
+        {% endif %}
+        {% if primary_link and primary_link.company.primary_sector %}
+          <div><dt>Ngành chính:</dt><dd>{{ primary_link.company.primary_sector.name }}</dd></div>
+        {% endif %}
+        {% if primary_link and primary_link.company.tax_code %}
+          <div><dt>Mã số thuế DN:</dt><dd>{{ primary_link.company.tax_code }}</dd></div>
+        {% endif %}
+        <div>
+          <dt>Trạng thái hồ sơ:</dt>
+          <dd style="color:#065F46">Đã công bố minh bạch</dd>
+        </div>
+      </dl>
+
+      <div class="badge-list">
+        {% if person.verification != "none" %}
+          <span class="badge-pill verified">✓ {{ person.get_verification_display }}</span>
+        {% endif %}
+        {% for a in person.awards.all %}
+          <span class="badge-pill">★ {{ a.badge.name }}{% if a.year %} ({{ a.year }}){% endif %}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  {% if sections.summary %}
+  <div class="section-block">
+    <h3 class="section-title">1. Tóm tắt tiểu sử</h3>
+    <div class="section-body">
+      {{ sections.summary.body_md|md }}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if sections.journey %}
+  <div class="section-block">
+    <h3 class="section-title">2. Hành trình khởi nghiệp &amp; Sự nghiệp</h3>
+    <div class="section-body">
+      {{ sections.journey.body_md|md }}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if person.milestones.all %}
+  <div class="section-block">
+    <h3 class="section-title">3. Các dấu mốc sự nghiệp tiêu biểu</h3>
+    <table class="table-clean">
+      <thead>
+        <tr>
+          <th class="col-year">Năm</th>
+          <th>Sự kiện / Dấu mốc</th>
+          <th style="width:140px">Phân loại</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in person.milestones.all %}
+        <tr>
+          <td class="col-year">{{ m.year }}</td>
+          <td><b>{{ m.title }}</b></td>
+          <td>{{ m.get_kind_display }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if person.company_links.all %}
+  <div class="section-block">
+    <h3 class="section-title">4. Doanh nghiệp liên quan</h3>
+    <table class="table-clean">
+      <thead>
+        <tr>
+          <th>Tên doanh nghiệp</th>
+          <th>Vai trò / Chức danh</th>
+          <th>Ngành nghề</th>
+          <th>Trụ sở</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pc in person.company_links.all %}
+        <tr>
+          <td><b>{{ pc.company.legal_name }}</b> {% if pc.company.brand_name %}({{ pc.company.brand_name }}){% endif %}</td>
+          <td>{{ pc.label }}</td>
+          <td>{{ pc.company.primary_sector.name|default:"—" }}</td>
+          <td>{{ pc.company.province.name|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if person.sources.all %}
+  <div class="section-block">
+    <h3 class="section-title">5. Nguồn tham khảo &amp; Kiểm chứng</h3>
+    <ol style="margin:0;padding-left:18px;font-size:12px;color:var(--muted)">
+      {% for s in person.sources.all %}
+      <li>{{ s.title }} ({{ s.get_kind_display }}){% if s.url %} – {{ s.url }}{% endif %}</li>
+      {% endfor %}
+    </ol>
+  </div>
+  {% endif %}
+
+  <footer class="doc-footer">
+    <div>
+      <div><b>doanhnhan.wiki</b> – Hệ sinh thái Bách khoa toàn thư Doanh nhân trẻ Việt Nam.</div>
+      <div>Mọi sửa đổi trái phép trên bản in so với bản điện tử trực tuyến đều không có giá trị đối chiếu.</div>
+    </div>
+    <div style="text-align:right">
+      <div>Trang 1 / 1</div>
+      <div>Bản quyền © {% now "Y" %} doanhnhan.wiki</div>
+    </div>
+  </footer>
+</div>
+
+{% if print_now %}
+<script>
+  window.addEventListener('load', function() {
+    window.print();
+  });
+</script>
+{% endif %}
+
+</body>
+</html>

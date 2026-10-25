@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Hiệp hội – doanhnhan.wiki{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <p class="eyebrow">Hiệp hội &amp; câu lạc bộ</p>
+    <h1>Cộng đồng doanh nhân có tổ chức</h1>
+    <p class="lead">Hiệp hội đối tác xác nhận hội viên, giới thiệu hồ sơ mới và công bố hoạt động — tạo lớp tin cậy cho toàn bộ dữ liệu.</p>
+  </div>
+</section>
+<section class="container" style="padding-top:32px">
+  <div class="row between" style="margin-bottom:20px">
+    <div class="tabs" role="tablist" aria-label="Loại tổ chức" data-tabs data-target="#org-grid">
+      <button class="tab" role="tab" type="button" data-filter="all" aria-selected="true">Tất cả</button>
+      {% for val, label in levels %}<button class="tab" role="tab" type="button" data-filter="{{ val }}" aria-selected="false">{{ label }}</button>{% endfor %}
+    </div>
+    <form action="" role="search"><label for="qhh" class="sr-only">Tìm hiệp hội</label><input id="qhh" name="q" value="{{ q }}" class="input" type="search" placeholder="Tìm hiệp hội…" style="width:300px;max-width:100%"></form>
+  </div>
+  <div>
+    <div id="org-grid" class="grid-4-cols">
+      {% for a in associations %}
+        <a class="association-card" href="{{ a.get_absolute_url }}" data-cat="{{ a.level }}">
+          <div class="association-head">
+            {% if a.logo %}
+              <img class="association-logo" src="{{ a.logo.url }}" alt="{{ a.name }}">
+            {% else %}
+              <div class="association-avatar-initials">{{ a.initials }}</div>
+            {% endif %}
+            <div style="flex:1;min-width:0">
+              <div class="association-title" title="{{ a.name }}">{{ a.name }}</div>
+              <div class="association-level-sub">{{ a.get_level_display }}{% if a.province %} · {{ a.province.name }}{% endif %}</div>
+            </div>
+          </div>
+
+          <div class="association-stats-box">
+            <div>
+              <span class="muted" style="display:block;font-size:11px">Hội viên có hồ sơ</span>
+              <b>{{ a.member_count }}</b>
+            </div>
+            <div style="text-align:right">
+              <span class="muted" style="display:block;font-size:11px">{{ a.leader.position|default:"Chủ tịch" }}</span>
+              <span style="font-weight:600;color:var(--ink)">{{ a.leader.person.full_name|default:"—"|truncatewords:2 }}</span>
+            </div>
+          </div>
+
+          <div class="association-footer">
+            {% if a.is_partner %}
+              <span class="chip chip-gold" style="font-size:11px;padding:2px 7px">Đối tác xác minh</span>
+            {% else %}
+              <span class="chip" style="font-size:11px;padding:2px 7px">Đang kết nối</span>
+            {% endif %}
+            <span style="color:var(--gold-dark);font-weight:700">Xem trang →</span>
+          </div>
+        </a>
+      {% empty %}
+        <div style="grid-column:1/-1;text-align:center;padding:48px 16px;background:#fff;border-radius:12px;border:1px solid var(--line)">
+          Chưa có hiệp hội nào cho mục này.
+        </div>
+      {% endfor %}
+    </div>
+
+    <div style="margin-top:32px;display:flex;justify-content:center">
+      {% paginate page %}
+    </div>
+  </div>
+</section>
+<section class="container section section-last">
+  <div class="card-dark" style="border-radius:16px;padding:36px;display:flex;flex-wrap:wrap;gap:32px;align-items:center">
+    <div style="flex:999 1 420px;min-width:0">
+      <p class="eyebrow">Dành cho hiệp hội</p>
+      <h2 class="serif" style="font-size:30px;font-weight:600;color:#fff">Trở thành hiệp hội đối tác</h2>
+      <div class="grid grid-auto-200" style="margin-top:20px">
+        <div><div style="font-weight:600;color:var(--gold-light)">Trang hiệp hội riêng</div><p style="font-size:14px;margin-top:4px">Giới thiệu, ban chấp hành, chi hội, hoạt động.</p></div>
+        <div><div style="font-weight:600;color:var(--gold-light)">Xác nhận hội viên</div><p style="font-size:14px;margin-top:4px">Gắn dấu “Hội viên đã xác nhận” cho hồ sơ.</p></div>
+        <div><div style="font-weight:600;color:var(--gold-light)">Quản lý sự kiện</div><p style="font-size:14px;margin-top:4px">Đăng sự kiện, ghi nhận người tham dự vào hồ sơ.</p></div>
+      </div>
+    </div>
+    <a class="btn btn-gold" href="{% url 'public:feedback' %}?chu-de=partner">Đăng ký làm đối tác</a>
+  </div>
+</section>
+{% endblock %}

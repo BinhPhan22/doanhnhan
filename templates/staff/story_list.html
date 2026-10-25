@@ -1,0 +1,121 @@
+{% extends "staff/base.html" %}
+{% load dnw %}
+{% block title %}Câu chuyện & Phóng sự (Story) – Quản trị{% endblock %}
+{% block content %}
+<div class="row between" style="align-items:center;margin-bottom:18px">
+  <div>
+    <h1 class="admin-title">Câu chuyện &amp; Phóng sự (Story)</h1>
+    <p class="muted small">Quản lý bài viết phóng sự, chân dung doanh nhân, bài học thương trường và ký sự sự kiện.</p>
+  </div>
+  <a class="btn btn-gold" href="{% url 'staff:story_new' %}">+ Viết bài mới</a>
+</div>
+
+<!-- Lọc & Tìm kiếm -->
+<div class="card" style="padding:14px 18px;margin-bottom:18px">
+  <form method="get" class="row" style="gap:10px;align-items:center;flex-wrap:wrap">
+    <div style="flex:1;min-width:220px">
+      <input type="search" name="q" value="{{ q }}" placeholder="Tìm theo tiêu đề, tác giả..." class="input" style="width:100%">
+    </div>
+    <div style="min-width:180px">
+      <select name="loai" class="select" style="width:100%">
+        <option value="">— Tất cả phân loại —</option>
+        {% for val, label in story_types %}
+          <option value="{{ val }}"{% if story_type == val %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="min-width:160px">
+      <select name="trang-thai" class="select" style="width:100%">
+        <option value="">— Tất cả trạng thái —</option>
+        {% for val, label in statuses %}
+          <option value="{{ val }}"{% if status == val %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-dark" style="min-height:38px">Lọc</button>
+    {% if q or story_type or status %}
+      <a href="{% url 'staff:story_list' %}" class="btn btn-sm btn-outline" style="min-height:38px">Xóa lọc</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Bảng bài viết -->
+<div class="card" style="padding:0">
+  <div class="table-wrap">
+    <table class="table admin-table">
+      <thead>
+        <tr>
+          <th>Bài viết / Phân loại</th>
+          <th>Liên kết thực thể</th>
+          <th>Tác giả</th>
+          <th>Ngày đăng</th>
+          <th style="text-align:center">Lượt xem</th>
+          <th>Trạng thái</th>
+          <th style="text-align:right">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in stories %}
+          <tr>
+            <td>
+              <div style="font-weight:600;font-size:15px;color:var(--ink)">
+                {{ s.title }}
+                {% if s.is_featured %}
+                  <span class="chip chip-solid-gold" style="font-size:11px;padding:1px 6px;margin-left:4px">Tiêu điểm</span>
+                {% endif %}
+              </div>
+              <div class="small muted" style="margin-top:2px">
+                {{ s.get_story_type_display }}
+              </div>
+            </td>
+            <td>
+              {% if s.featured_person %}
+                <a href="{% url 'staff:person_edit' s.featured_person.pk %}" class="small" title="Doanh nhân">
+                  👤 {{ s.featured_person.full_name }}
+                </a>
+              {% elif s.featured_company %}
+                <a href="{% url 'staff:company_edit' s.featured_company.pk %}" class="small" title="Doanh nghiệp">
+                  🏢 {{ s.featured_company.display_name }}
+                </a>
+              {% elif s.featured_event %}
+                <a href="{% url 'staff:event_edit' s.featured_event.pk %}" class="small" title="Sự kiện">
+                  📅 {{ s.featured_event.title }}
+                </a>
+              {% else %}
+                <span class="muted small">—</span>
+              {% endif %}
+            </td>
+            <td class="small">{{ s.author_name }}</td>
+            <td class="small">{{ s.published_at|date:"d/m/Y H:i" }}</td>
+            <td style="text-align:center;font-weight:600;font-size:13px">{{ s.views_count }}</td>
+            <td>
+              <span class="status-pill {{ s.status }}">{{ s.get_status_display }}</span>
+            </td>
+            <td style="white-space:nowrap;text-align:right">
+              <a class="btn btn-dark btn-sm" href="{% url 'staff:story_edit' s.pk %}">Sửa</a>
+              <a class="btn btn-outline btn-sm" href="{{ s.get_absolute_url }}" target="_blank">Xem</a>
+              <form method="post" action="{% url 'staff:story_toggle_status' s.pk %}" style="display:inline">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button class="btn btn-outline btn-sm" type="submit">
+                  {% if s.status == 'archived' %}Bỏ ẩn{% else %}Ẩn{% endif %}
+                </button>
+              </form>
+              <form method="post" action="{% url 'staff:story_delete' s.pk %}" style="display:inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn bài viết “{{ s.title|escapejs }}”?')">
+                {% csrf_token %}
+                <button class="btn btn-danger btn-sm" type="submit">Xóa</button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" class="empty-state" style="padding:32px;text-align:center">
+              Chưa có bài viết Story nào. Hãy bấm <b>+ Viết bài mới</b> để tạo bài viết phóng sự đầu tiên.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

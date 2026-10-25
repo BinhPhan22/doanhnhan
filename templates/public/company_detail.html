@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}{{ company.display_name }} – doanhnhan.wiki{% endblock %}
+{% block description %}{% if sections.overview %}{{ sections.overview.body_md|excerpt:160 }}{% else %}{{ company.legal_name }}{% endif %}{% endblock %}
+{% block meta %}
+<link rel="canonical" href="{{ SITE_URL }}{{ company.get_absolute_url }}">
+<meta property="og:title" content="{{ company.display_name }} – doanhnhan.wiki">
+<meta property="og:description" content="{% if sections.overview %}{{ sections.overview.body_md|excerpt:160 }}{% else %}{{ company.legal_name }}{% if company.province %} · {{ company.province.name }}{% endif %}{% endif %}">
+<meta property="og:url" content="{{ request.build_absolute_uri }}">
+<meta property="og:type" content="business.business">
+<meta property="og:site_name" content="doanhnhan.wiki">
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% url 'public:company_og_image' company.slug %}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ company.display_name }} – doanhnhan.wiki">
+<meta name="twitter:description" content="{% if sections.overview %}{{ sections.overview.body_md|excerpt:160 }}{% else %}{{ company.legal_name }}{% endif %}">
+<meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% url 'public:company_og_image' company.slug %}">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "{{ company.legal_name|escapejs }}",
+  {% if company.brand_name %}"alternateName": "{{ company.brand_name|escapejs }}",{% endif %}
+  {% if company.tax_code %}"taxID": "{{ company.tax_code }}",{% endif %}
+  "url": "{{ request.build_absolute_uri }}",
+  {% if company.logo %}"logo": "{{ request.scheme }}://{{ request.get_host }}{{ company.logo.url }}",{% endif %}
+  {% if company.address %}"address": {
+    "@type": "PostalAddress",
+    "streetAddress": "{{ company.address|escapejs }}"
+  },{% endif %}
+  {% if company.founded_year %}"foundingDate": "{{ company.founded_year }}",{% endif %}
+  "description": "{% if sections.overview %}{{ sections.overview.body_md|excerpt:200|escapejs }}{% endif %}"
+}
+</script>
+{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <nav class="breadcrumb light" aria-label="Đường dẫn"><a href="{% url 'public:home' %}">Trang chủ</a><span>/</span><a href="{% url 'public:company_list' %}">Doanh nghiệp</a>{% if company.primary_sector %}<span>/</span><a href="{{ company.primary_sector.get_absolute_url }}">{{ company.primary_sector.name }}</a>{% endif %}<span>/</span><span>{{ company.display_name }}</span></nav>
+  {% if company.status != "published" %}<div class="flash flash-warning" style="margin:12px 0">Trang đang ở trạng thái <b>{{ company.get_status_display }}</b>.</div>{% endif %}
+  {% if company.is_demo %}<div class="flash flash-warning" style="margin:12px 0">Đây là <b>doanh nghiệp mẫu</b> (hư cấu) để minh họa cách trình bày.</div>{% endif %}
+  <div class="row between" style="align-items:flex-end;border-bottom:1px solid var(--line-strong)">
+    <div class="row" style="gap:18px;align-items:center;padding-bottom:16px">
+      {% if company.logo %}<img class="logo-img" style="width:72px;height:72px" src="{{ company.logo.url }}" alt="Logo {{ company.display_name }}">{% else %}<div class="avatar square" style="width:72px;height:72px;font-size:24px" aria-hidden="true">{{ company.initials }}</div>{% endif %}
+      <div>
+        <h1 class="serif" style="font-size:38px;font-weight:600">{{ company.display_name }}</h1>
+        {% if company.awards.all %}
+          <div class="row" style="gap:8px;margin:8px 0 10px;flex-wrap:wrap">
+            {% for a in company.awards.all %}
+              <a href="{% url 'public:company_list' %}?danh-hieu={{ a.badge.code }}" class="badge-award badge-{{ a.badge.color }}" style="text-decoration:none" title="{{ a.badge.issuer }}{% if a.citation %} · {{ a.citation }}{% endif %}">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="vertical-align:-2px;margin-right:4px"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                <b>{{ a.badge.name }}</b>{% if a.year %} ({{ a.year }}){% endif %}{% if a.title %} · {{ a.title }}{% endif %}
+              </a>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <p style="margin-top:4px;color:var(--muted);font-size:15px">{{ company.legal_name }}{% if company.tax_code %} · MST {{ company.tax_code }}{% endif %}{% if company.founded_year %} · Thành lập {{ company.founded_year }}{% endif %}</p>
+      </div>
+    </div>
+    <nav class="page-tabs" aria-label="Các mục của trang doanh nghiệp">
+      <a href="{{ company.get_absolute_url }}" aria-current="page">Giới thiệu</a>
+      <a href="{% url 'public:company_history' company.slug %}">Lịch sử sửa đổi</a>
+      <a href="{% url 'public:feedback' %}?chu-de=correction&doi-tuong={{ company.display_name|urlencode }}">Góp ý / Bổ sung</a>
+      <button type="button" class="tab-share-btn" data-share-url="{{ request.build_absolute_uri }}" title="Chia sẻ hồ sơ doanh nghiệp hoặc sao chép liên kết">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:-1px;margin-right:4px"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Chia sẻ
+      </button>
+      {% if user.is_editor %}<a href="{% url 'staff:company_edit' company.pk %}">Sửa (biên tập)</a>{% endif %}
+    </nav>
+  </div>
+
+  <div class="layout reverse-mobile">
+    <article class="main card card-lg article prose">
+      {% if company.verification != "none" %}<div class="verified-banner">
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 12l2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span><b>Doanh nghiệp {{ company.get_verification_display|lower }}</b>{% if company.verification_note %} · {{ company.verification_note }}{% endif %}{% if company.verified_at %} · ngày {{ company.verified_at|date:"d/m/Y" }}{% endif %}</span>
+      </div>{% endif %}
+      <nav class="toc-box" aria-label="Mục lục">
+        <b>Mục lục</b>
+        <ol>
+          {% for s in company.sections.all %}<li><a href="#muc-{{ s.key }}">{{ s.label }}</a></li>{% endfor %}
+          {% if company.milestones.all %}<li><a href="#dau-moc">Dấu mốc</a></li>{% endif %}
+          {% if company.person_links.all %}<li><a href="#lanh-dao">Ban lãnh đạo</a></li>{% endif %}
+          {% if videos %}<li><a href="#video">Video</a></li>{% endif %}
+          {% if company.sources.all %}<li><a href="#nguon">Nguồn tham khảo</a></li>{% endif %}
+        </ol>
+      </nav>
+      {% for s in company.sections.all %}
+        <h2 id="muc-{{ s.key }}"{% if forloop.first %} style="margin-top:28px"{% endif %}>{{ s.label }}</h2>
+        {{ s.body_md|md }}
+        {% if s.key == "products" and company.products.all %}<div class="grid grid-auto-210" style="margin:12px 0 8px">{% for p in company.products.all %}<div class="card"><div style="font-weight:600">{{ p.name }}</div>{% if p.description %}<p class="small muted" style="margin-top:4px">{{ p.description }}</p>{% endif %}</div>{% endfor %}</div>{% endif %}
+      {% empty %}<p class="muted" style="margin-top:24px">Trang chưa có bài viết chi tiết.</p>{% endfor %}
+      {% if company.products.all and not sections.products %}<h2>Sản phẩm &amp; dịch vụ</h2><div class="grid grid-auto-210">{% for p in company.products.all %}<div class="card"><div style="font-weight:600">{{ p.name }}</div>{% if p.description %}<p class="small muted" style="margin-top:4px">{{ p.description }}</p>{% endif %}</div>{% endfor %}</div>{% endif %}
+
+      {% if company.milestones.all %}<h2 id="dau-moc">Dấu mốc</h2>
+      <ol class="timeline">{% for m in company.milestones.all %}<li><div class="year">{{ m.year }}</div><div>{{ m.title }}{% if m.source_url %} <a href="{{ m.source_url }}" target="_blank" rel="noopener nofollow" class="small">[nguồn]</a>{% endif %}</div></li>{% endfor %}</ol>{% endif %}
+
+      {% if company.person_links.all %}<h2 id="lanh-dao">Ban lãnh đạo</h2>
+      <div class="grid grid-auto-260">{% for l in company.person_links.all %}{% include "partials/person_mini.html" with p=l.person role=l.label since=l.start_year %}{% endfor %}</div>{% endif %}
+
+      <div id="video">{% include "partials/video_section.html" %}</div>
+
+      {% if company.sources.all %}<h2 id="nguon">Nguồn tham khảo</h2>
+      <ol class="sources">{% for s in company.sources.all %}<li id="nguon-{{ s.number }}">{% if s.url %}<a href="{{ s.url }}" target="_blank" rel="noopener nofollow">{{ s.title }}</a>{% else %}{{ s.title }}{% endif %} <span class="small muted">· {{ s.get_kind_display }}</span></li>{% endfor %}</ol>{% endif %}
+    </article>
+
+    <aside class="aside">
+      <div class="card infobox">
+        <div class="portrait" style="height:160px">{% if company.cover %}<img src="{{ company.cover.url }}" alt="Ảnh {{ company.display_name }}">{% else %}<span class="muted small">Chưa có ảnh</span>{% endif %}</div>
+        <dl>
+          <dt>Tên pháp lý</dt><dd>{{ company.legal_name }}</dd>
+          {% if company.tax_code %}<dt>Mã số thuế</dt><dd>{{ company.tax_code }}</dd>{% endif %}
+          {% if company.founded_year %}<dt>Thành lập</dt><dd>{{ company.founded_year }}</dd>{% endif %}
+          {% if company.province %}<dt>Trụ sở</dt><dd>{{ company.province.name }}{% if company.address %}<br><span class="small muted">{{ company.address }}</span>{% endif %}</dd>{% endif %}
+          {% if company.sectors.all %}<dt>Ngành</dt><dd>{% for s in company.sectors.all %}<a href="{{ s.get_absolute_url }}">{{ s.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
+          {% if company.size_band %}<dt>Quy mô</dt><dd>{{ company.get_size_band_display }}</dd>{% endif %}
+          {% if founders %}<dt>Người sáng lập</dt><dd>{% for l in founders %}<a href="{{ l.person.get_absolute_url }}">{{ l.person.full_name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
+          {% if company.website %}<dt>Website</dt><dd><a href="{{ company.website }}" rel="noopener nofollow" target="_blank">{{ company.website|cut:"https://"|cut:"http://"|truncatechars:32 }}</a></dd>{% endif %}
+        </dl>
+      </div>
+      <div class="card small" style="color:var(--muted);line-height:1.6">
+        <div style="font-weight:600;color:var(--ink);font-size:14px;margin-bottom:6px">Thông tin phiên bản</div>
+        {% if last_rev %}Bản sửa #{{ last_rev.revision_no }} · cập nhật {{ last_rev.reviewed_at|date:"d/m/Y" }}<br>Duyệt: Ban biên tập<br>{% endif %}
+        <a href="{% url 'public:company_history' company.slug %}">Xem lịch sử</a> · <button type="button" class="linklike" data-copy="{{ company.legal_name }}. doanhnhan.wiki, {% now 'd/m/Y' %}. {{ SITE_URL }}{{ company.get_absolute_url }}">Trích dẫn trang này</button>
+      </div>
+      <a class="btn btn-gold btn-block" href="{% url 'public:feedback' %}?chu-de=correction&doi-tuong={{ company.display_name|urlencode }}" style="display:flex;align-items:center;justify-content:center;gap:8px">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Góp ý / Báo thông tin cần cập nhật
+      </a>
+      <a class="btn btn-outline btn-block" href="{% url 'public:contact' %}">Đăng ký ghi hình câu chuyện doanh nghiệp</a>
+    </aside>
+  </div>
+</div>
+{% endblock %}

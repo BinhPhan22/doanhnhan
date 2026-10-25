@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{{ document.title }} – doanhnhan.wiki{% endblock %}
+{% block content %}
+<section class="hero"><div class="container" style="padding-top:36px;padding-bottom:36px">
+  <p class="eyebrow">Trung tâm chính sách</p>
+  <h1>Chính sách &amp; điều khoản</h1>
+  <p class="lead" style="font-size:16px">Mọi văn bản có số phiên bản và ngày hiệu lực. Khi có thay đổi quan trọng, người dùng được thông báo và đồng ý lại.</p>
+</div></section>
+<div class="container layout">
+  <nav class="doc-nav" aria-label="Danh sách văn bản" style="flex:1 1 260px">
+    {% for d in documents %}<a href="{% url 'public:policy_detail' d.code %}"{% if d.pk == document.pk %} aria-current="page"{% endif %}>{{ d.title }}</a>{% endfor %}
+    <a href="{% url 'public:data_request' %}">Gửi yêu cầu về dữ liệu cá nhân</a>
+  </nav>
+  <article class="main card card-lg policy prose">
+    <h2 class="serif" style="font-size:32px;font-weight:600">{{ document.title }}</h2>
+    {% if version %}
+      <div class="row" style="gap:8px 16px;margin-top:12px;font-size:14px;color:var(--muted)">
+        <span class="chip chip-gold">Phiên bản {{ version.version }}</span>
+        <span>Hiệu lực từ {{ version.effective_at|date:"d/m/Y" }}</span>
+        {% if version.pk != current.pk %}<a href="{% url 'public:policy_detail' document.code %}" style="font-weight:600">Xem bản hiện hành</a>{% endif %}
+        <button type="button" class="linklike" onclick="window.print()" style="font-weight:600">In / lưu PDF</button>
+      </div>
+      {% if scheduled %}<p class="note" style="margin-top:14px">Phiên bản {{ scheduled.version }} sẽ có hiệu lực từ {{ scheduled.effective_at|date:"d/m/Y" }}. {{ scheduled.summary_of_changes }}</p>{% endif %}
+      {% if version.summary_points %}<div class="summary-box">
+        <div style="font-weight:700;font-size:14px;margin-bottom:8px">Tóm tắt dễ hiểu</div>
+        <ul style="margin:0;padding-left:20px;font-size:14px;line-height:1.7;color:var(--text-2)">{% for line in version.summary_points|lines %}<li>{{ line }}</li>{% endfor %}</ul>
+        <p class="small muted" style="margin-top:10px;font-size:12px">Bản tóm tắt chỉ để tham khảo; toàn văn bên dưới mới có giá trị.</p>
+      </div>{% endif %}
+      {{ version.body_md|md }}
+      {% if versions|length > 1 %}<h3>Các phiên bản</h3><ul>{% for v in versions %}<li><a href="?phien-ban={{ v.version }}">Phiên bản {{ v.version }}</a> — hiệu lực {{ v.effective_at|date:"d/m/Y" }}{% if v.summary_of_changes %}: {{ v.summary_of_changes }}{% endif %}</li>{% endfor %}</ul>{% endif %}
+    {% else %}<p class="muted" style="margin-top:16px">Văn bản đang được soạn thảo.</p>{% endif %}
+  </article>
+</div>
+{% endblock %}

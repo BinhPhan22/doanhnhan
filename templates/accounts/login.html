@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Đăng nhập – doanhnhan.wiki{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:48px;padding-bottom:72px">
+  <div class="modal" aria-labelledby="dn-title" style="max-width:480px;margin:0 auto;box-shadow:none;border:1px solid var(--line)">
+    <div class="modal-head">
+      <p class="eyebrow" style="margin:0">Thành viên doanhnhan.wiki</p>
+      <h1 id="dn-title">Đăng nhập</h1>
+      <p>Đăng nhập để đưa thông tin doanh nhân, doanh nghiệp lên trang.</p>
+    </div>
+    <form class="modal-body" method="post" novalidate>{% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      {% if GOOGLE_ENABLED %}<a class="btn btn-outline btn-block" href="{% url 'accounts:google_start' %}{% if next %}?next={{ next|urlencode }}{% endif %}">{% include "partials/google_icon.html" %} Đăng nhập bằng Google</a>
+      <div class="divider"><span>hoặc dùng email</span></div>{% endif %}
+      {% if error %}<div class="flash flash-error" role="alert">{{ error }}</div>{% endif %}
+      {% include "partials/field.html" with field=form.email %}
+      <div class="field">
+        <div class="row between"><label for="dn-pw">Mật khẩu</label><a href="{% url 'accounts:password_reset' %}" class="small">Quên mật khẩu?</a></div>
+        <div class="password-wrap">{{ form.password }}<button type="button" class="password-toggle" data-toggle-password="#dn-pw" aria-pressed="false">Hiện</button></div>
+      </div>
+      <label class="check">{{ form.remember }} {{ form.remember.label }}</label>
+      <button type="submit" class="btn btn-gold btn-block">Đăng nhập</button>
+      <p class="note" style="font-size:13px">Tài khoản chưa được duyệt vẫn đăng nhập được nhưng chỉ thấy thông báo “đang chờ duyệt”; chưa gửi thông tin lên được.</p>
+      <p class="small muted" style="text-align:center">Chưa có tài khoản? <a href="{% url 'accounts:signup' %}"><b>Đăng ký</b></a></p>
+    </form>
+  </div>
+</div>
+{% endblock %}

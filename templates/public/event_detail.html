@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ event.title }} – Sự kiện – doanhnhan.wiki{% endblock %}
+{% block description %}{{ event.description|excerpt:160 }}{% endblock %}
+{% block meta %}
+<link rel="canonical" href="{{ SITE_URL }}{{ event.get_absolute_url }}">
+<meta property="og:title" content="{{ event.title }} – doanhnhan.wiki">
+<meta property="og:description" content="{{ event.description|excerpt:160 }}">
+<meta property="og:url" content="{{ request.build_absolute_uri }}">
+<meta property="og:type" content="event">
+{% if event.cover %}
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ event.cover.url }}">
+<meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{{ event.cover.url }}">
+{% else %}
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% url 'public:default_og_image' %}">
+<meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% url 'public:default_og_image' %}">
+{% endif %}
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Event",
+  "name": "{{ event.title|escapejs }}",
+  "startDate": "{{ event.starts_at|date:'c' }}",
+  {% if event.ends_at %}"endDate": "{{ event.ends_at|date:'c' }}",{% endif %}
+  "eventAttendanceMode": "{% if event.is_online %}https://schema.org/OnlineEventAttendanceMode{% else %}https://schema.org/OfflineEventAttendanceMode{% endif %}",
+  "eventStatus": "{% if event.status == 'cancelled' %}https://schema.org/EventCancelled{% else %}https://schema.org/EventScheduled{% endif %}",
+  "location": {
+    {% if event.is_online %}
+    "@type": "VirtualLocation",
+    "url": "{{ request.build_absolute_uri }}"
+    {% else %}
+    "@type": "Place",
+    "name": "{{ event.venue|default:'Việt Nam'|escapejs }}"
+    {% endif %}
+  },
+  {% if event.cover %}"image": ["{{ request.scheme }}://{{ request.get_host }}{{ event.cover.url }}"],{% endif %}
+  "description": "{{ event.description|excerpt:200|escapejs }}"
+}
+</script>
+{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Đường dẫn"><a href="{% url 'public:home' %}">Trang chủ</a><span>/</span><a href="{% url 'public:event_list' %}">Sự kiện</a><span>/</span><span>{{ event.title|truncatechars:50 }}</span></nav>
+    <div class="hero-split" style="align-items:flex-start">
+      <div class="grow">
+        <span class="chip chip-solid-gold">{{ event.get_kind_display }}</span>{% if event.status == "cancelled" %} <span class="chip" style="background:var(--danger-bg);color:#7A2416">Đã hủy</span>{% endif %}
+        <h1 style="margin-top:12px">{{ event.title }}</h1>
+        <p class="lead" style="font-size:16px;margin-top:10px">{{ event.starts_at|date:"l, d/m/Y · H:i" }}{% if event.ends_at %} – {{ event.ends_at|date:"H:i d/m/Y" }}{% endif %}<br>{% if event.is_online %}Trực tuyến{% else %}{{ event.venue }}{% if event.province %}, {{ event.province.name }}{% endif %}{% endif %}</p>
+      </div>
+      <div class="row" style="gap:10px;align-items:center;flex-wrap:wrap">
+        <button type="button" class="btn-like-heart" data-like-btn data-type="event" data-id="{{ event.id }}" data-count="{{ event.likes_count|default:0 }}" style="padding:7px 14px;font-size:13.5px" title="Quan tâm sự kiện">
+          <svg class="heart-icon" viewBox="0 0 24 24" width="18" height="18"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span class="like-count" data-like-count>{{ event.likes_count|default:0 }}</span>
+          <span style="font-weight:500;margin-left:2px">Quan tâm</span>
+        </button>
+        <button type="button" class="btn btn-outline tab-share-btn" data-share-url="{{ request.build_absolute_uri }}" title="Chia sẻ sự kiện hoặc sao chép liên kết" style="color:#fff;border-color:rgba(255,255,255,0.3)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:-1px;margin-right:4px"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Chia sẻ
+        </button>
+        {% if event.registration_url and event.is_upcoming and event.status == "published" %}<a class="btn btn-gold" href="{{ event.registration_url }}" target="_blank" rel="noopener nofollow">Đăng ký tham dự ↗</a>{% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+<div class="container layout">
+  <div class="main">
+    {% if event.cover %}<img src="{{ event.cover.url }}" alt="" style="width:100%;border-radius:12px;margin-bottom:20px">{% endif %}
+    {% if event.description %}<div class="card card-lg prose">{{ event.description|md }}</div>{% endif %}
+    {% for role, items in groups.items %}<h2 class="section-title sm" style="margin:32px 0 16px">{{ role }}</h2>
+      <div class="grid grid-auto-260">{% for ep in items %}{% with l=ep.person.primary_link %}{% include "partials/person_mini.html" with p=ep.person role=ep.note|default:l.company.display_name %}{% endwith %}{% endfor %}</div>
+    {% endfor %}
+    {% include "partials/video_section.html" with more_url=None %}
+  </div>
+  <aside class="aside">
+    <div class="card infobox"><dl>
+      <dt>Thời gian</dt><dd>{{ event.starts_at|date:"H:i d/m/Y" }}</dd>
+      <dt>Địa điểm</dt><dd>{% if event.is_online %}Trực tuyến{% else %}{{ event.venue|default:"—" }}{% endif %}</dd>
+      {% if event.organizer_name %}<dt>Tổ chức</dt><dd>{% if event.organizer %}<a href="{{ event.organizer.get_absolute_url }}">{{ event.organizer.name }}</a>{% else %}{{ event.organizer_text }}{% endif %}</dd>{% endif %}
+      {% if sectors %}<dt>Ngành</dt><dd>{% for s in sectors %}<a href="{{ s.get_absolute_url }}">{{ s.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
+    </dl></div>
+    <a class="btn btn-outline btn-block" href="{% url 'public:contact' %}">Đăng ký ghi hình tại sự kiện</a>
+  </aside>
+</div>
+{% endblock %}

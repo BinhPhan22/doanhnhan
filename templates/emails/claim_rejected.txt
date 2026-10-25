@@ -1,0 +1,7 @@
+Chào {{ claim.user.full_name }},
+
+Yêu cầu nhận quản lý hồ sơ “{{ claim.person.full_name }}” chưa được chấp thuận.
+Lý do: {{ claim.review_note }}
+
+Trân trọng,
+Ban biên tập doanhnhan.wiki

@@ -1,0 +1,61 @@
+<article class="modern-event-card" style="display:flex;flex-direction:column;position:relative">
+  <!-- Banner sự kiện -->
+  <div class="event-card-banner" style="position:relative">
+    <a href="{{ e.get_absolute_url }}" class="event-card-banner-link" style="display:block;width:100%;height:100%">
+      {% if e.cover %}
+        <img src="{{ e.cover.url }}" alt="{{ e.title }}" loading="lazy">
+      {% else %}
+        <div class="event-date-box">
+          <div class="event-date-day">{{ e.starts_at|date:"d" }}</div>
+          <div class="event-date-month">THG {{ e.starts_at|date:"m/Y" }}</div>
+        </div>
+      {% endif %}
+    </a>
+    <span class="event-kind-tag">{{ e.get_kind_display }}</span>
+    {% if e.starts_at|date:"U" >= "now"|date:"U" %}
+      <span class="event-status-badge status-upcoming">Sắp diễn ra</span>
+    {% else %}
+      <span class="event-status-badge status-past">Đã diễn ra</span>
+    {% endif %}
+
+    <div class="like-badge-overlay">
+      <button type="button" class="btn-like-heart" data-like-btn data-type="event" data-id="{{ e.id }}" data-count="{{ e.likes_count|default:0 }}" title="Quan tâm / Thả tim sự kiện">
+        <svg class="heart-icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <span class="like-count" data-like-count>{{ e.likes_count|default:0 }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Thân thẻ -->
+  <div class="event-card-body" style="display:flex;flex-direction:column;flex:1;padding:16px">
+    <h3 class="event-card-title" style="font-size:16px;line-height:1.4;margin:0 0 10px;font-weight:700">
+      <a href="{{ e.get_absolute_url }}" style="color:var(--ink);text-decoration:none">{{ e.title }}</a>
+    </h3>
+
+    <div class="event-card-meta-list" style="margin-bottom:14px;flex:1">
+      <div class="event-meta-item" title="Thời gian">
+        <span>📅</span>
+        <span>{{ e.starts_at|date:"d/m/Y · H:i" }}</span>
+      </div>
+      <div class="event-meta-item" title="Địa điểm: {{ e.location_label }}">
+        <span>📍</span>
+        <span>{{ e.location_label|truncatechars:28 }}</span>
+      </div>
+      <div class="event-meta-item" title="Đơn vị tổ chức: {{ e.organizer_name|default:'Ban tổ chức' }}">
+        <span>🏛️</span>
+        <span>{{ e.organizer_name|default:"Ban tổ chức"|truncatechars:28 }}</span>
+      </div>
+    </div>
+
+    <!-- Chân thẻ -->
+    <div class="event-card-footer" style="margin-top:auto;padding-top:10px;border-top:1px solid #F1F5F9;display:flex;align-items:center;justify-content:space-between">
+      <span class="event-participant-badge" style="font-size:12px;color:var(--muted)">
+        👥 {{ e.participant_count|default:0 }} doanh nhân
+      </span>
+      <a href="{{ e.get_absolute_url }}" class="event-action-link" style="color:var(--gold-darker);font-weight:600;font-size:13px;text-decoration:none;display:inline-flex;align-items:center;gap:4px">
+        <span>Chi tiết</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+    </div>
+  </div>
+</article>

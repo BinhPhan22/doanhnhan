@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Giới thiệu – doanhnhan.wiki{% endblock %}
+{% block content %}
+<section class="hero"><div class="container"><p class="eyebrow">Giới thiệu</p><h1>Nơi lưu giữ hành trình của doanh nhân trẻ tiêu biểu Việt Nam.</h1></div></section>
+<div class="container layout">
+  <article class="main card card-lg prose">{% if site.about_md %}{{ site.about_md|md }}{% else %}<p>doanhnhan.wiki là trang cộng đồng lưu giữ hồ sơ doanh nhân trẻ tiêu biểu Việt Nam, doanh nghiệp của họ, hiệp hội, sự kiện và video phỏng vấn.</p>{% endif %}</article>
+  <aside class="aside"><div class="card infobox"><dl>
+    <dt>Đơn vị vận hành</dt><dd>{{ site.operator_name }}</dd>
+    {% if site.address %}<dt>Địa chỉ</dt><dd>{{ site.address }}</dd>{% endif %}
+    {% if site.contact_email %}<dt>Email</dt><dd><a href="mailto:{{ site.contact_email }}">{{ site.contact_email }}</a></dd>{% endif %}
+    {% if site.contact_phone %}<dt>Điện thoại</dt><dd>{{ site.contact_phone }}</dd>{% endif %}
+  </dl></div>
+  <a class="btn btn-gold btn-block" href="{% url 'public:donate' %}">Tài trợ doanhnhan.wiki</a></aside>
+</div>
+{% endblock %}
