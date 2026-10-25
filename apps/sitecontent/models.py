@@ -172,7 +172,7 @@ class InterviewRequest(models.Model):
     phone = models.CharField("Số điện thoại", max_length=30)
     email = models.EmailField("Email")
     kind = models.CharField("Nội dung muốn thực hiện", max_length=10, choices=Kind.choices, default=Kind.INTERVIEW)
-    story = models.TextField("Câu chuyện bạn muốn chia sẻ", blank=True)
+    story = models.TextField("Câu chuyện bạn muốn chia sẻ", blank=True, default="")
     format = models.CharField("Hình thức", max_length=10, choices=Format.choices, default=Format.ONSITE)
     address = models.CharField("Địa chỉ dự kiến ghi hình", max_length=255, blank=True)
     preferred_time = models.DateTimeField("Thời gian thuận tiện", null=True, blank=True)
@@ -180,13 +180,27 @@ class InterviewRequest(models.Model):
     state = models.CharField("Trạng thái", max_length=10, choices=State.choices, default=State.NEW)
     assignee = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
                                  related_name="+", verbose_name="Phụ trách")
-    video = models.ForeignKey("directory.Video", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    video = models.ForeignKey("directory.Video", null=True, blank=True, on_delete=models.SET_NULL, related_name="+", verbose_name="Video liên quan")
+    related_story = models.ForeignKey("directory.Story", null=True, blank=True, on_delete=models.SET_NULL, related_name="+", verbose_name="Bài viết Story liên quan")
+    person = models.ForeignKey("directory.Person", null=True, blank=True, on_delete=models.SET_NULL, related_name="+", verbose_name="Hồ sơ Doanh nhân liên quan")
     staff_note = models.TextField("Ghi chú nội bộ", blank=True)
     consent_at = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-created_at"]
+
+    @property
+    def sla_due_at(self):
+        from datetime import timedelta
+        return self.created_at + timedelta(days=3)
+
+    @property
+    def is_sla_breached(self):
+        from django.utils import timezone
+        if self.state in (self.State.NEW, self.State.CONTACTED):
+            return timezone.now() > self.sla_due_at
+        return False
 
 
 class ContactMessage(models.Model):
@@ -210,6 +224,18 @@ class ContactMessage(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+    @property
+    def sla_due_at(self):
+        from datetime import timedelta
+        return self.created_at + timedelta(days=3)
+
+    @property
+    def is_sla_breached(self):
+        from django.utils import timezone
+        if not self.handled:
+            return timezone.now() > self.sla_due_at
+        return False
 
 
 class DataRequest(models.Model):

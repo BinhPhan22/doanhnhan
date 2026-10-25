@@ -23,7 +23,7 @@
   <div class="table-wrap"><table class="table admin-table">
     <thead><tr><th scope="col">Nội dung</th><th scope="col">Loại</th><th scope="col">Người gửi</th><th scope="col">Gợi ý tự động</th><th scope="col">Gửi lúc</th><th></th></tr></thead>
     <tbody>{% for r in queue %}<tr>
-      <td><b>{{ r.title }}</b><span class="small muted">{{ r.get_entity_type_display }}</span></td>
+      <td><b>{{ r.title }}</b><span class="small muted">{{ r.get_entity_type_display }}</span>{% if r.is_sla_breached %}<br><span class="chip chip-danger" style="display:inline-block;margin-top:4px;font-size:11px;background:#fee2e2;color:#b91c1c;padding:1px 6px;border-radius:4px" title="Quá hạn cam kết duyệt 3 ngày làm việc">⚠️ Quá hạn SLA</span>{% endif %}</td>
       <td>{{ r.get_kind_display }}</td>
       <td>{{ r.author_label }}<span class="small muted">{{ r.author.email }}</span></td>
       <td>{% with warns=r.checks %}{% for c in warns %}{% if c.level == "warn" and forloop.counter0 < 2 %}<span class="small check-warn">! {{ c.text|truncatechars:60 }}</span>{% endif %}{% empty %}<span class="small muted">—</span>{% endfor %}{% endwith %}</td>

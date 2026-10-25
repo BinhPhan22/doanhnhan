@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Xác thực 2 lớp (2FA) – Ban Biên Tập doanhnhan.wiki{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:48px;padding-bottom:72px">
+  <div class="modal" aria-labelledby="dn-2fa-title" style="max-width:480px;margin:0 auto;box-shadow:none;border:1px solid var(--line)">
+    <div class="modal-head">
+      <p class="eyebrow" style="margin:0;color:var(--gold-dark)">Bảo mật tòa soạn (P0)</p>
+      <h1 id="dn-2fa-title" style="font-size:24px">Xác thực hai lớp (2FA)</h1>
+      <p style="font-size:14px;color:var(--muted)">Hệ thống đã gửi một mã xác thực 6 chữ số đến email <b>{{ masked_email }}</b>. Vui lòng nhập mã để tiếp tục truy cập khu vực tác nghiệp tòa soạn.</p>
+    </div>
+    <form class="modal-body" method="post" novalidate>{% csrf_token %}
+      {% if error %}<div class="flash flash-error" role="alert">{{ error }}</div>{% endif %}
+      {% if message %}<div class="flash flash-success" role="alert">{{ message }}</div>{% endif %}
+      
+      <div class="field" style="margin:16px 0">
+        <label for="id_otp" style="font-weight:600">Mã xác thực 6 chữ số</label>
+        <input type="text" name="otp" id="id_otp" class="input" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" placeholder="Ví dụ: 123456" required autofocus style="font-size:24px;letter-spacing:6px;text-align:center;font-family:monospace;padding:10px">
+      </div>
+
+      <button type="submit" class="btn btn-gold btn-block" style="padding:10px 0;font-size:15px;font-weight:600">Xác nhận đăng nhập</button>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;font-size:13px">
+        <a href="{% url 'accounts:resend_2fa' %}" class="linklike">Chưa nhận được mã? Gửi lại</a>
+        <a href="{% url 'accounts:login' %}" style="color:var(--muted)">Quay lại đăng nhập</a>
+      </div>
+      <p class="note" style="margin-top:16px;font-size:12px;line-height:1.5">
+        🔒 Tài khoản Ban Biên Tập và Quản Trị Viên được bảo vệ bởi xác thực hai lớp bắt buộc nhằm ngăn chặn truy cập trái phép và bảo vệ an toàn dữ liệu doanh nhân.
+      </p>
+    </form>
+  </div>
+</div>
+{% endblock %}

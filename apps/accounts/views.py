@@ -92,6 +92,23 @@ def login_view(request):
         user = authenticate(request, email=form.cleaned_data["email"], password=form.cleaned_data["password"])
         locked = getattr(request, "login_locked_until", None)
         if user is not None:
+            # P0: Tài khoản tòa soạn (Biên tập viên, Quản trị viên, Superuser) bắt buộc xác thực 2 lớp (2FA)
+            if user.role in (User.Role.EDITOR, User.Role.ADMIN) or user.is_staff or user.is_superuser:
+                import secrets
+                from django.core.cache import cache
+
+                otp = f"{secrets.randbelow(900000) + 100000:06d}"
+                cache.set(f"2fa_otp:{user.pk}", otp, timeout=600)
+                cache.set(f"2fa_attempts:{user.pk}", 0, timeout=600)
+
+                request.session["2fa_user_id"] = user.pk
+                request.session["2fa_next"] = _safe_next(request, default="staff:dashboard")
+                request.session["2fa_remember"] = form.cleaned_data["remember"]
+
+                send(user.email, "Mã xác thực 2FA đăng nhập tòa soạn doanhnhan.wiki", "otp_email", {"otp": otp, "user": user})
+                log(user, "account.login_2fa_prompted", user, user.email, request=request)
+                return redirect("accounts:verify_2fa")
+
             login(request, user, backend=BACKEND)
             if not form.cleaned_data["remember"]:
                 request.session.set_expiry(0)
@@ -104,6 +121,87 @@ def login_view(request):
             error = "Email hoặc mật khẩu chưa đúng."
     return render(request, "accounts/login.html", {"form": form, "error": error,
                                                    "next": request.GET.get("next", "")})
+
+
+def _mask_email(email: str) -> str:
+    parts = email.split("@")
+    if len(parts) == 2:
+        name, domain = parts
+        masked_name = name[:2] + "****" if len(name) > 2 else name + "****"
+        return f"{masked_name}@{domain}"
+    return email
+
+
+def verify_2fa(request):
+    user_id = request.session.get("2fa_user_id")
+    if not user_id:
+        return redirect("accounts:login")
+
+    user = User.objects.filter(pk=user_id, is_active=True).first()
+    if not user:
+        request.session.pop("2fa_user_id", None)
+        return redirect("accounts:login")
+
+    from django.core.cache import cache
+    error = None
+
+    if request.method == "POST":
+        otp = request.POST.get("otp", "").strip()
+        expected_otp = cache.get(f"2fa_otp:{user.pk}")
+        attempts = cache.get(f"2fa_attempts:{user.pk}", 0)
+
+        if not expected_otp:
+            error = "Mã xác thực đã hết hạn hoặc chưa được tạo. Vui lòng bấm 'Gửi lại mã'."
+        elif attempts >= 5:
+            cache.delete(f"2fa_otp:{user.pk}")
+            request.session.pop("2fa_user_id", None)
+            error = "Nhập sai mã quá 5 lần. Vui lòng đăng nhập lại từ đầu."
+        elif otp == expected_otp:
+            cache.delete(f"2fa_otp:{user.pk}")
+            cache.delete(f"2fa_attempts:{user.pk}")
+
+            login(request, user, backend=BACKEND)
+            request.session["is_2fa_verified"] = True
+
+            remember = request.session.pop("2fa_remember", True)
+            if not remember:
+                request.session.set_expiry(0)
+
+            nxt = request.session.pop("2fa_next", None) or reverse("staff:dashboard")
+            request.session.pop("2fa_user_id", None)
+            log(user, "account.login_2fa_success", user, user.email, request=request)
+            messages.success(request, f"Xác thực 2FA thành công. Chào mừng {user.full_name} quay trở lại tác nghiệp!")
+            return redirect(nxt)
+        else:
+            cache.set(f"2fa_attempts:{user.pk}", attempts + 1, timeout=600)
+            remaining = 5 - (attempts + 1)
+            error = f"Mã xác thực không chính xác. Bạn còn {remaining} lần thử."
+
+    return render(request, "accounts/verify_2fa.html", {
+        "masked_email": _mask_email(user.email),
+        "error": error,
+    })
+
+
+def resend_2fa(request):
+    user_id = request.session.get("2fa_user_id")
+    if not user_id:
+        return redirect("accounts:login")
+
+    user = User.objects.filter(pk=user_id, is_active=True).first()
+    if not user:
+        return redirect("accounts:login")
+
+    import secrets
+    from django.core.cache import cache
+
+    otp = f"{secrets.randbelow(900000) + 100000:06d}"
+    cache.set(f"2fa_otp:{user.pk}", otp, timeout=600)
+    cache.set(f"2fa_attempts:{user.pk}", 0, timeout=600)
+    send(user.email, "Mã xác thực 2FA mới - Tòa soạn doanhnhan.wiki", "otp_email", {"otp": otp, "user": user})
+
+    messages.info(request, "Đã gửi mã xác thực mới đến email của bạn.")
+    return redirect("accounts:verify_2fa")
 
 
 @require_POST

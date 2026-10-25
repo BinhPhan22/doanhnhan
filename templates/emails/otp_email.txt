@@ -1,0 +1,11 @@
+Chào {{ user.full_name }},
+
+Mã xác thực hai lớp (2FA) để đăng nhập vào trang quản trị tòa soạn doanhnhan.wiki của bạn là:
+
+{{ otp }}
+
+Mã xác thực này có hiệu lực trong vòng 10 phút. Tuyệt đối không chia sẻ mã này cho bất kỳ ai.
+Nếu bạn không phải là người thực hiện yêu cầu này, vui lòng đổi mật khẩu ngay lập tức hoặc liên hệ quản trị viên hệ thống để bảo vệ tài khoản tòa soạn.
+
+Trân trọng,
+Ban Quản trị doanhnhan.wiki

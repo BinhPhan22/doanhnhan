@@ -208,12 +208,24 @@
     <div class="story-callout-box">
       <div class="callout-icon">💡</div>
       <div class="callout-content">
-        <h4>Bạn có câu chuyện hoặc đề xuất nhân vật doanh nhân tiêu biểu?</h4>
+        <h4>Bạn có câu chuyện hoặc muốn chia sẻ hành trình kinh doanh?</h4>
         <p>doanhnhan.wiki luôn trân trọng những câu chuyện truyền cảm hứng, bài học thương trường và dấu mốc cống hiến vì cộng đồng.</p>
         <div class="callout-actions">
           <a href="{% url 'public:contact' %}" class="btn btn-sm btn-dark">Gửi câu chuyện / Liên hệ phỏng vấn</a>
         </div>
       </div>
+    </div>
+
+    <!-- Hộp báo lỗi / cải chính bài viết (nối liền vào feedback) -->
+    <div class="story-correction-box" style="margin-top:20px;padding:16px 20px;background:var(--sand);border-radius:8px;border:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-weight:600;font-size:14px;color:var(--ink)">Phát hiện thông tin cần cải chính hoặc cập nhật?</div>
+        <div class="small muted" style="margin-top:2px">Ban biên tập luôn tiếp nhận và đối chiếu tư liệu để cập nhật bài viết kịp thời, chuẩn xác.</div>
+      </div>
+      <a href="{% url 'public:feedback' %}?chu-de=correction&doi-tuong=Story:+{{ story.title|urlencode }}&url={{ request.build_absolute_uri|urlencode }}" class="btn btn-sm btn-outline" style="background:#fff">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Báo lỗi / Yêu cầu cải chính bài viết này
+      </a>
     </div>
   </div>
 </article>

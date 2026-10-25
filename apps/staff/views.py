@@ -705,12 +705,68 @@ def story_form(request, pk=None):
         extra["delete_url"] = reverse("staff:story_delete", args=[instance.pk])
         extra["toggle_url"] = reverse("staff:story_toggle_status", args=[instance.pk])
         extra["toggle_label"] = "Bỏ ẩn bài viết" if instance.status == Status.ARCHIVED else "Ẩn bài viết"
+        extra["revisions"] = instance.revisions.all()[:10]
+
+    old_data = {}
+    if instance:
+        old_data = {
+            "title": instance.title,
+            "summary": instance.summary,
+            "content_md": instance.content_md,
+            "status": instance.status,
+            "story_type": instance.story_type,
+            "published_at": instance.published_at.isoformat() if instance.published_at else None,
+        }
+
+    def after(obj, form):
+        is_new = not bool(instance and instance.pk)
+        if is_new and not obj.author_id:
+            obj.author = request.user
+
+        # Quy tắc duyệt hai người (Two-editor rule) cho Story
+        if obj.status == Status.PUBLISHED:
+            is_admin_or_super = request.user.is_superuser or request.user.role == "admin"
+            if obj.author_id == request.user.pk and not is_admin_or_super:
+                obj.status = Status.PENDING
+                obj.save(update_fields=["status", "author"])
+                messages.warning(request, "Quy tắc duyệt hai người (Two-editor rule): Bài viết đã được lưu và chuyển sang trạng thái 'Chờ duyệt xuất bản'. Cần một biên tập viên khác hoặc Quản trị viên duyệt xuất bản.")
+            else:
+                obj.reviewer = request.user
+                if not obj.published_at:
+                    obj.published_at = timezone.now()
+                obj.save(update_fields=["reviewer", "published_at", "author"])
+        else:
+            obj.save(update_fields=["author"])
+
+        # Lưu lịch sử phiên bản (Revision snapshot)
+        Revision.objects.create(
+            entity_type="story",
+            kind=Revision.Kind.CREATE if is_new else Revision.Kind.UPDATE,
+            story=obj,
+            title=obj.title,
+            data={
+                "title": obj.title,
+                "summary": obj.summary,
+                "content_md": obj.content_md,
+                "status": obj.status,
+                "story_type": obj.story_type,
+                "published_at": obj.published_at.isoformat() if obj.published_at else None,
+            },
+            previous_data=old_data,
+            state=Revision.State.APPROVED if obj.status == Status.PUBLISHED else Revision.State.PENDING,
+            author=request.user,
+            author_role="editor",
+            reviewer=request.user if obj.status == Status.PUBLISHED else None,
+            reviewed_at=timezone.now() if obj.status == Status.PUBLISHED else None,
+        )
+
     return _crud_form(
         request, sf.StoryForm, instance,
         title="Câu chuyện (Story)",
         back=reverse("staff:story_list"),
         action_name="story",
         extra=extra,
+        after_save=after,
     )
 
 
@@ -1096,6 +1152,17 @@ def interviews(request):
 @editor_required
 def interview_detail(request, pk):
     obj = get_object_or_404(InterviewRequest, pk=pk)
+    actions = []
+    if obj.related_story_id:
+        actions.append({"label": f"📄 Xem Story: {obj.related_story.title}", "url": reverse("staff:story_edit", args=[obj.related_story_id]), "class": "btn-outline"})
+    else:
+        actions.append({"label": "✨ Khởi tạo bài viết Story từ yêu cầu này →", "url": reverse("staff:interview_create_story", args=[obj.pk]), "class": "btn-gold"})
+
+    if obj.person_id:
+        actions.append({"label": f"👤 Xem hồ sơ Doanh nhân: {obj.person.full_name}", "url": reverse("staff:person_edit", args=[obj.person_id]), "class": "btn-outline"})
+    else:
+        actions.append({"label": "👤 Khởi tạo hồ sơ Doanh nhân từ yêu cầu này →", "url": reverse("staff:interview_create_person", args=[obj.pk]), "class": "btn-outline"})
+
     return _crud_form(request, sf.InterviewStaffForm, obj, title=f"Yêu cầu phỏng vấn: {obj.full_name}",
                       back=reverse("staff:interviews"), action_name="interview", template="staff/record_form.html",
                       extra={"record": obj, "record_fields": [
@@ -1105,7 +1172,70 @@ def interview_detail(request, pk):
                           ("Địa chỉ ghi hình", obj.address or "Trực tuyến / Không yêu cầu"),
                           ("Thời gian thuận tiện", timezone.localtime(obj.preferred_time).strftime("%H:%M ngày %d/%m/%Y") if obj.preferred_time else "Chưa chọn"),
                           ("Tư liệu", obj.reference_url), ("Câu chuyện", obj.story),
-                          ("Gửi lúc", timezone.localtime(obj.created_at).strftime("%d/%m/%Y %H:%M"))]})
+                          ("Gửi lúc", timezone.localtime(obj.created_at).strftime("%d/%m/%Y %H:%M"))],
+                          "record_actions": actions})
+
+
+@editor_required
+def interview_create_story(request, pk):
+    obj = get_object_or_404(InterviewRequest, pk=pk)
+    if obj.related_story_id:
+        messages.info(request, "Yêu cầu phỏng vấn này đã có bài viết Story liên kết.")
+        return redirect("staff:story_edit", pk=obj.related_story_id)
+
+    title = f"Hành trình kinh doanh của {obj.full_name} ({obj.company})"
+    summary = (obj.story[:200] + "...") if len(obj.story) > 200 else (obj.story or f"Câu chuyện khởi nghiệp và phát triển của doanh nhân {obj.full_name} tại {obj.company}.")
+    content = (
+        f"### Khởi đầu & Cơ duyên\n\n{obj.story or 'Đang cập nhật nội dung phỏng vấn...'}\n\n"
+        f"### Doanh nghiệp & Hoạt động hiện tại\n\n- **Doanh nghiệp:** {obj.company}\n- **Chức vụ:** {obj.title or 'Lãnh đạo doanh nghiệp'}\n\n"
+        f"*Tư liệu phỏng vấn ghi nhận lúc {timezone.localtime(obj.created_at).strftime('%d/%m/%Y')} từ cổng liên hệ ghi hình doanhnhan.wiki.*"
+    )
+
+    story = Story.objects.create(
+        title=title,
+        story_type=Story.StoryType.JOURNEY if obj.kind == InterviewRequest.Kind.COMPANY else Story.StoryType.INTERVIEW,
+        summary=summary,
+        content_md=content,
+        author_name=request.user.full_name or "Ban Biên tập",
+        author=request.user,
+        source_name="Tòa soạn doanhnhan.wiki",
+        source_url=obj.reference_url,
+        status=Status.DRAFT,
+    )
+    obj.related_story = story
+    if obj.state == InterviewRequest.State.NEW:
+        obj.state = InterviewRequest.State.SCHEDULED
+    obj.save(update_fields=["related_story", "state"])
+
+    log(request.user, "interview.create_story", story, f"Khởi tạo Story từ yêu cầu #{obj.pk}", request=request)
+    messages.success(request, f"Đã khởi tạo bản nháp Story từ yêu cầu của {obj.full_name}. Bạn có thể tiếp tục biên tập tại đây.")
+    return redirect("staff:story_edit", pk=story.pk)
+
+
+@editor_required
+def interview_create_person(request, pk):
+    obj = get_object_or_404(InterviewRequest, pk=pk)
+    if obj.person_id:
+        messages.info(request, "Yêu cầu phỏng vấn này đã có hồ sơ doanh nhân liên kết.")
+        return redirect("staff:person_edit", pk=obj.person_id)
+
+    person = Person.objects.create(
+        full_name=obj.full_name,
+        headline=f"{obj.title} tại {obj.company}" if obj.title else f"Đại diện {obj.company}",
+        phone=obj.phone,
+        email_public=obj.email,
+        website=obj.reference_url,
+        status=Status.DRAFT,
+    )
+    if obj.story:
+        person.sections.create(key="khoi_dau", body_md=obj.story, sort_order=1)
+
+    obj.person = person
+    obj.save(update_fields=["person"])
+
+    log(request.user, "interview.create_person", person, f"Khởi tạo Doanh nhân từ yêu cầu #{obj.pk}", request=request)
+    messages.success(request, f"Đã khởi tạo bản nháp hồ sơ doanh nhân {person.full_name}. Bạn có thể hoàn thiện 7 phần mục tại đây.")
+    return redirect("staff:person_edit", pk=person.pk)
 
 
 @editor_required

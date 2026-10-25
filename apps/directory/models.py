@@ -17,6 +17,7 @@ from apps.common.video import PLATFORM_LABELS, format_duration, parse_video_url
 
 class Status(models.TextChoices):
     DRAFT = "draft", "Bản nháp"
+    PENDING = "pending", "Chờ duyệt xuất bản"
     PUBLISHED = "published", "Đã công bố"
     ARCHIVED = "archived", "Đã ẩn"
 
@@ -30,7 +31,13 @@ class Verification(models.TextChoices):
 
 class PublishedQuerySet(models.QuerySet):
     def published(self):
-        return self.filter(status=Status.PUBLISHED)
+        from django.utils import timezone
+        qs = self.filter(status=Status.PUBLISHED)
+        if any(f.name == "published_at" for f in self.model._meta.fields):
+            qs = qs.filter(
+                models.Q(published_at__lte=timezone.now()) | models.Q(published_at__isnull=True)
+            )
+        return qs
 
     def search(self, q):
         q = normalize(q)
@@ -752,7 +759,11 @@ class Story(SluggedModel):
     featured_event = models.ForeignKey(Event, null=True, blank=True, on_delete=models.SET_NULL, related_name="stories", verbose_name="Sự kiện liên quan")
 
     is_featured = models.BooleanField("Ghim nổi bật (Featured)", default=False, help_text="Hiển thị ở vị trí tiêu điểm trên đầu trang Story.")
-    status = models.CharField("Trạng thái", max_length=20, choices=Status.choices, default=Status.PUBLISHED)
+    status = models.CharField("Trạng thái", max_length=20, choices=Status.choices, default=Status.DRAFT)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+                               related_name="authored_stories", verbose_name="Tài khoản tác giả")
+    reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+                                 related_name="reviewed_stories", verbose_name="Người duyệt xuất bản")
     published_at = models.DateTimeField("Thời điểm xuất bản", default=timezone.now)
     views_count = models.PositiveIntegerField("Lượt xem", default=0)
     likes_count = models.PositiveIntegerField("Lượt thích / tim", default=0)
@@ -976,6 +987,32 @@ class Podcast(SluggedModel):
 
     def get_absolute_url(self):
         return reverse("public:podcast_detail", kwargs={"slug": self.slug})
+
+
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
+from django.core.files.uploadedfile import UploadedFile
+
+
+@receiver(pre_save, sender=Person)
+@receiver(pre_save, sender=Company)
+@receiver(pre_save, sender=Story)
+@receiver(pre_save, sender=Postcard)
+@receiver(pre_save, sender=Podcast)
+def clean_model_images_exif(sender, instance, **kwargs):
+    """Tự động loại bỏ siêu dữ liệu EXIF / GPS khỏi các file ảnh mới tải lên để bảo vệ quyền riêng tư."""
+    from apps.common.images import strip_image_exif
+    for field in instance._meta.fields:
+        if isinstance(field, models.ImageField):
+            val = getattr(instance, field.name, None)
+            if val and isinstance(getattr(val, "file", None), UploadedFile):
+                try:
+                    cleaned_file = strip_image_exif(val)
+                    setattr(instance, field.name, cleaned_file)
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning("Không thể loại bỏ EXIF cho %s.%s: %s", sender.__name__, field.name, e)
+
 
 
 

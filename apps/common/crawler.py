@@ -3,9 +3,11 @@ Mô-đun cào dữ liệu và trích xuất hồ sơ doanh nhân & doanh nghiệ
 Hỗ trợ cào bài viết từ URL báo chí chính thống, chuẩn hóa văn bản, bóc tách cấu trúc JSON,
 kiểm tra trùng lặp và lưu trữ vào cơ sở dữ liệu.
 """
+import ipaddress
 import json
 import logging
 import re
+import socket
 from urllib.parse import urlparse
 
 from django.core.files.base import ContentFile
@@ -66,6 +68,40 @@ def detect_publisher(url: str, default_name: str = "") -> str:
         return default_name or domain or "Báo chí"
     except Exception:
         return default_name or "Báo chí"
+
+
+def is_safe_url(url: str) -> tuple[bool, str]:
+    """Kiểm tra URL an toàn, chống SSRF (chặn dải IP nội bộ, loopback, cloud metadata)."""
+    if not url:
+        return False, "Đường dẫn trống."
+    try:
+        parsed = urlparse(url)
+    except Exception as e:
+        return False, f"URL không hợp lệ: {e}"
+    if parsed.scheme not in ("http", "https"):
+        return False, "Chỉ chấp nhận giao thức HTTP hoặc HTTPS."
+    hostname = (parsed.hostname or "").lower().strip()
+    if not hostname:
+        return False, "Đường dẫn không có tên miền hợp lệ."
+    if (hostname in ("localhost", "127.0.0.1", "0.0.0.0", "metadata.google.internal")
+            or hostname.endswith(".local") or hostname.endswith(".internal")
+            or hostname.endswith(".localhost")):
+        return False, "Không được phép truy cập tên miền hoặc địa chỉ nội bộ."
+    try:
+        addr_info = socket.getaddrinfo(hostname, None)
+    except Exception as e:
+        return False, f"Không thể phân giải tên miền: {e}"
+
+    for item in addr_info:
+        ip_str = item[4][0]
+        try:
+            ip = ipaddress.ip_address(ip_str)
+            if (ip.is_private or ip.is_loopback or ip.is_link_local
+                    or ip.is_reserved or ip.is_multicast or ip_str == "169.254.169.254"):
+                return False, f"Địa chỉ IP ({ip_str}) thuộc mạng nội bộ hoặc không an toàn."
+        except ValueError:
+            return False, "Địa chỉ IP không hợp lệ."
+    return True, ""
 
 
 def clean_html_to_text(html: str) -> dict:
@@ -146,7 +182,11 @@ def fetch_article(url_or_text: str) -> dict:
             "text": url_or_text[:12000],
         }
 
-    # Admin nhập URL
+    # Admin nhập URL - Kiểm tra an toàn chống SSRF
+    safe, reason = is_safe_url(url_or_text)
+    if not safe:
+        raise ValueError(f"Đường dẫn không hợp lệ hoặc bị chặn vì lý do bảo mật: {reason}")
+
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -595,9 +635,9 @@ def save_crawled_data(post_data: dict, user) -> dict:
 
     save_person = post_data.get("save_person") in ("1", "true", "on", True)
     save_company = post_data.get("save_company") in ("1", "true", "on", True)
-    status_choice = post_data.get("status", Status.PUBLISHED)
+    status_choice = post_data.get("status", Status.DRAFT)
     if status_choice not in Status.values:
-        status_choice = Status.PUBLISHED
+        status_choice = Status.DRAFT
 
     person_obj = None
     company_obj = None
@@ -633,26 +673,29 @@ def save_crawled_data(post_data: dict, user) -> dict:
             person_obj.published_at = timezone.now()
         person_obj.save()
 
-        # Tự động tải ảnh chân dung nếu có đường dẫn ảnh bài báo
+        # Không tự động tải ảnh mạng không rõ bản quyền. Chỉ tải nếu biên tập viên chủ động chọn và URL an toàn.
+        download_portrait = post_data.get("download_portrait") in ("1", "true", "on", True)
         image_url = _clean(post_data.get("image_url") or post_data.get("person_image_url"))
-        if image_url and (created_person or not person_obj.portrait):
-            try:
-                img_headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-                    "Referer": source_url or "https://google.com",
-                }
-                img_resp = requests.get(image_url, headers=img_headers, timeout=10)
-                if img_resp.status_code == 200 and len(img_resp.content) > 1024:
-                    ct = img_resp.headers.get("content-type", "").lower()
-                    ext = "jpg"
-                    if "png" in ct:
-                        ext = "png"
-                    elif "webp" in ct:
-                        ext = "webp"
-                    fname = f"{person_obj.slug or 'person'}_{timezone.now().strftime('%Y%m%d%H%M%S')}.{ext}"
-                    person_obj.portrait.save(fname, ContentFile(img_resp.content), save=True)
-            except Exception as img_err:
-                logger.warning("Không thể tải ảnh chân dung tự động từ %s: %s", image_url, img_err)
+        if download_portrait and image_url and (created_person or not person_obj.portrait):
+            safe_img, _ = is_safe_url(image_url)
+            if safe_img:
+                try:
+                    img_headers = {
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                        "Referer": source_url or "https://google.com",
+                    }
+                    img_resp = requests.get(image_url, headers=img_headers, timeout=10)
+                    if img_resp.status_code == 200 and len(img_resp.content) > 1024:
+                        ct = img_resp.headers.get("content-type", "").lower()
+                        ext = "jpg"
+                        if "png" in ct:
+                            ext = "png"
+                        elif "webp" in ct:
+                            ext = "webp"
+                        fname = f"{person_obj.slug or 'person'}_{timezone.now().strftime('%Y%m%d%H%M%S')}.{ext}"
+                        person_obj.portrait.save(fname, ContentFile(img_resp.content), save=True)
+                except Exception as img_err:
+                    logger.warning("Không thể tải ảnh chân dung tự động từ %s: %s", image_url, img_err)
 
         # Lưu các phần bài viết (ArticleSection)
         sections = [

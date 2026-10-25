@@ -16,6 +16,7 @@ class Revision(models.Model):
     class Entity(models.TextChoices):
         PERSON = "person", "Doanh nhân"
         COMPANY = "company", "Doanh nghiệp"
+        STORY = "story", "Bài viết Story"
 
     class Kind(models.TextChoices):
         CREATE = "create", "Hồ sơ mới"
@@ -34,6 +35,8 @@ class Revision(models.Model):
                                related_name="revisions")
     company = models.ForeignKey("directory.Company", null=True, blank=True, on_delete=models.CASCADE,
                                 related_name="revisions")
+    story = models.ForeignKey("directory.Story", null=True, blank=True, on_delete=models.CASCADE,
+                              related_name="revisions")
     title = models.CharField("Tên hiển thị", max_length=255)
     data = models.JSONField(default=dict)
     previous_data = models.JSONField(default=dict, blank=True)
@@ -54,6 +57,18 @@ class Revision(models.Model):
         ordering = ["-created_at"]
         verbose_name = "bản sửa đổi"
         verbose_name_plural = "bản sửa đổi"
+
+    @property
+    def sla_due_at(self):
+        from datetime import timedelta
+        return self.created_at + timedelta(days=3)
+
+    @property
+    def is_sla_breached(self):
+        from django.utils import timezone
+        if self.state in (self.State.PENDING, self.State.NEEDS_INFO):
+            return timezone.now() > self.sla_due_at
+        return False
 
     def __str__(self):
         return f"{self.get_kind_display()} · {self.title}"

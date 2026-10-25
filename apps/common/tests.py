@@ -26,7 +26,7 @@ from apps.directory.models import (
     Sector, Status, Story, Video,
 )
 from apps.moderation.models import AuditLog, ProfileClaim, Revision
-from apps.sitecontent.models import DonationAccount, PolicyAcceptance, PolicyDocument, PolicyVersion
+from apps.sitecontent.models import ContactMessage, DonationAccount, InterviewRequest, PolicyAcceptance, PolicyDocument, PolicyVersion
 
 PNG = (b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4"
        b"\x89\x00\x00\x00\rIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82")
@@ -1539,6 +1539,190 @@ class SevenSectionsAndPositioningTests(TestCase):
         self.assertEqual(res_about.status_code, 200)
         self.assertContains(res_about, "Nơi lưu giữ hành trình của mọi doanh nhân Việt Nam.")
         self.assertContains(res_about, "Tiêu chí đăng hồ sơ")
+
+
+class NewsroomSecurityAndWorkflowTest(BaseTest):
+    def _accept_policies(self, user):
+        for doc in PolicyDocument.objects.filter(requires_acceptance=True):
+            PolicyAcceptance.objects.get_or_create(user=user, version=doc.current_version())
+
+    def test_crawler_ssrf_protection(self):
+        from apps.common.crawler import is_safe_url
+        self.assertFalse(is_safe_url("http://127.0.0.1/admin")[0])
+        self.assertFalse(is_safe_url("http://localhost:8000")[0])
+        self.assertFalse(is_safe_url("http://169.254.169.254/latest/meta-data")[0])
+        self.assertFalse(is_safe_url("http://10.0.0.1/internal")[0])
+        self.assertFalse(is_safe_url("http://192.168.1.1/router")[0])
+        self.assertFalse(is_safe_url("file:///etc/passwd")[0])
+        self.assertFalse(is_safe_url("javascript:alert(1)")[0])
+        self.assertFalse(is_safe_url("ftp://example.com")[0])
+
+        with mock.patch("socket.getaddrinfo", return_value=[(None, None, None, None, ("10.0.0.5", 0))]):
+            self.assertFalse(is_safe_url("https://malicious-internal.test/data")[0])
+
+        with mock.patch("socket.getaddrinfo", return_value=[(None, None, None, None, ("103.1.2.3", 0))]):
+            self.assertTrue(is_safe_url("https://vietnamnet.vn/kinh-doanh")[0])
+
+    def test_editor_2fa_flow(self):
+        member = make_user("member2fa@example.com", role="member")
+        editor = make_user("editor2fa@example.com", role="editor")
+        self._accept_policies(member)
+        self._accept_policies(editor)
+
+        # 1. Member logs in directly without 2FA
+        res = self.client.post(reverse("accounts:login"), {"email": member.email, "password": "Matkhau-an-toan-123"})
+        self.assertRedirects(res, reverse("member:dashboard"))
+        self.client.logout()
+
+        # 2. Editor logs in -> redirects to verify_2fa and sends OTP
+        mail.outbox = []
+        res = self.client.post(reverse("accounts:login"), {"email": editor.email, "password": "Matkhau-an-toan-123"})
+        self.assertRedirects(res, reverse("accounts:verify_2fa"))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Mã xác thực", mail.outbox[0].subject)
+
+        # 3. Wrong OTP rejected
+        res = self.client.post(reverse("accounts:verify_2fa"), {"otp": "000000"})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Mã xác thực không chính xác")
+
+        # 4. Correct OTP succeeds
+        otp = cache.get(f"2fa_otp:{editor.pk}")
+        self.assertIsNotNone(otp)
+        res = self.client.post(reverse("accounts:verify_2fa"), {"otp": otp})
+        self.assertRedirects(res, reverse("staff:dashboard"))
+
+    def test_draft_and_scheduled_slug_hidden_from_public(self):
+        editor = make_user("editor_slug@example.com", role="editor")
+        self._accept_policies(editor)
+        draft_story = Story.objects.create(
+            title="Bài viết nháp bí mật",
+            slug="bai-viet-nhap-bi-mat",
+            status=Status.DRAFT,
+            content_md="Nội dung chưa công bố",
+        )
+        scheduled_story = Story.objects.create(
+            title="Bài viết lên lịch",
+            slug="bai-viet-len-lich",
+            status=Status.PUBLISHED,
+            published_at=timezone.now() + timedelta(days=2),
+            content_md="Nội dung tương lai",
+        )
+
+        # Anonymous public user receives 404
+        self.assertEqual(self.client.get(reverse("public:story_detail", args=[draft_story.slug])).status_code, 404)
+        self.assertEqual(self.client.get(reverse("public:story_detail", args=[scheduled_story.slug])).status_code, 404)
+
+        # Editor can preview both
+        self.client.force_login(editor)
+        self.assertEqual(self.client.get(reverse("public:story_detail", args=[draft_story.slug])).status_code, 200)
+        self.assertEqual(self.client.get(reverse("public:story_detail", args=[scheduled_story.slug])).status_code, 200)
+
+    def test_interview_to_story_and_person(self):
+        editor = make_user("editor_pipe@example.com", role="editor")
+        self._accept_policies(editor)
+        self.client.force_login(editor)
+        req = InterviewRequest.objects.create(
+            full_name="Lê Khải Hoàn",
+            title="Nhà sáng lập",
+            company="Công ty Giải pháp AI",
+            phone="0912345678",
+            email="hoan@example.com",
+            story="Khởi nghiệp từ hai bàn tay trắng năm 2018.",
+            state=InterviewRequest.State.NEW,
+        )
+
+        # Create Story from interview
+        res = self.client.get(reverse("staff:interview_create_story", args=[req.pk]))
+        self.assertEqual(res.status_code, 302)
+        req.refresh_from_db()
+        self.assertIsNotNone(req.related_story)
+        self.assertEqual(req.related_story.status, Status.DRAFT)
+        self.assertEqual(req.state, InterviewRequest.State.SCHEDULED)
+        self.assertIn("Khởi nghiệp từ hai bàn tay trắng", req.related_story.content_md)
+
+        # Create Person from interview
+        res = self.client.get(reverse("staff:interview_create_person", args=[req.pk]))
+        self.assertEqual(res.status_code, 302)
+        req.refresh_from_db()
+        self.assertIsNotNone(req.person)
+        self.assertEqual(req.person.full_name, "Lê Khải Hoàn")
+        self.assertEqual(req.person.status, Status.DRAFT)
+
+    def test_sla_breach_detection(self):
+        old_time = timezone.now() - timedelta(days=4)
+        recent_time = timezone.now() - timedelta(days=1)
+
+        req_overdue = InterviewRequest.objects.create(
+            full_name="Nguyễn Văn Quá Hạn",
+            company="Công ty A",
+            phone="0901",
+            email="a@example.com",
+            state=InterviewRequest.State.NEW,
+        )
+        InterviewRequest.objects.filter(pk=req_overdue.pk).update(created_at=old_time)
+        req_overdue.refresh_from_db()
+        self.assertTrue(req_overdue.is_sla_breached)
+
+        req_normal = InterviewRequest.objects.create(
+            full_name="Nguyễn Văn Trong Hạn",
+            company="Công ty B",
+            phone="0902",
+            email="b@example.com",
+            state=InterviewRequest.State.NEW,
+        )
+        InterviewRequest.objects.filter(pk=req_normal.pk).update(created_at=recent_time)
+        req_normal.refresh_from_db()
+        self.assertFalse(req_normal.is_sla_breached)
+
+        msg = ContactMessage.objects.create(
+            full_name="Khách Hàng",
+            email="c@example.com",
+            message="Xin chào",
+            handled=True,
+        )
+        ContactMessage.objects.filter(pk=msg.pk).update(created_at=old_time)
+        msg.refresh_from_db()
+        self.assertFalse(msg.is_sla_breached)
+
+    def test_two_editor_rule_for_stories(self):
+        editor = make_user("editor_author@example.com", role="editor")
+        self._accept_policies(editor)
+        self.client.force_login(editor)
+        story = Story.objects.create(
+            title="Bài viết biên tập viên",
+            summary="Tóm tắt bài viết",
+            content_md="Nội dung bài viết",
+            author=editor,
+            status=Status.DRAFT,
+        )
+        # Editor attempts to publish their own story
+        res = self.client.post(reverse("staff:story_edit", args=[story.pk]), {
+            "title": story.title,
+            "summary": story.summary,
+            "content_md": story.content_md,
+            "story_type": Story.StoryType.PORTRAIT,
+            "status": Status.PUBLISHED,
+        })
+        story.refresh_from_db()
+        # Enforced to PENDING because of two-editor rule
+        self.assertEqual(story.status, Status.PENDING)
+
+        # Admin can approve and publish
+        admin_user = make_user("admin_editor@example.com", role="admin")
+        self._accept_policies(admin_user)
+        self.client.force_login(admin_user)
+        res = self.client.post(reverse("staff:story_edit", args=[story.pk]), {
+            "title": story.title,
+            "summary": story.summary,
+            "content_md": story.content_md,
+            "story_type": Story.StoryType.PORTRAIT,
+            "status": Status.PUBLISHED,
+        })
+        story.refresh_from_db()
+        self.assertEqual(story.status, Status.PUBLISHED)
+        self.assertEqual(story.reviewer, admin_user)
+
 
 
 

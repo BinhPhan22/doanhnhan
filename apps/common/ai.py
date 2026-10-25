@@ -26,9 +26,12 @@ Nhiệm vụ của bạn:
 def get_ai_config() -> dict:
     """
     Lấy cấu hình AI:
-    Ưu tiên 1: Giá trị được quản trị viên lưu trong Database (SiteSettings).
-    Ưu tiên 2: Cấu hình biến môi trường GEMINI_API_KEY trong settings/.env.
+    Ưu tiên 1 (bảo mật P0): Biến môi trường GEMINI_API_KEY từ settings/.env.
+    Ưu tiên 2 (dự phòng): Giá trị được lưu trong Database (SiteSettings).
     """
+    env_key = getattr(settings, "GEMINI_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
+    env_model = getattr(settings, "GEMINI_MODEL", "") or os.environ.get("GEMINI_MODEL", "")
+
     db_key = ""
     db_model = ""
     try:
@@ -41,9 +44,9 @@ def get_ai_config() -> dict:
     except Exception:
         pass
 
-    api_key = db_key or getattr(settings, "GEMINI_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
-    model_name = db_model or getattr(settings, "GEMINI_MODEL", "") or os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-    source = "database" if db_key else ("env" if api_key else "fallback")
+    api_key = env_key or db_key
+    model_name = env_model or db_model or "gemini-2.5-flash"
+    source = "env" if env_key else ("database" if db_key else "fallback")
 
     masked_key = ""
     if api_key:

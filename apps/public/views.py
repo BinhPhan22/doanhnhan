@@ -38,9 +38,10 @@ def _people_qs():
 
 def _visible(model, slug, request, **filters):
     obj = get_object_or_404(model, slug=slug, **filters)
-    if obj.status != Status.PUBLISHED and not is_editor(request.user):
+    is_scheduled = hasattr(obj, "published_at") and obj.published_at and obj.published_at > timezone.now()
+    if (obj.status != Status.PUBLISHED or is_scheduled) and not is_editor(request.user):
         owner_id = getattr(obj, "owner_id", None)
-        if not (request.user.is_authenticated and owner_id and owner_id == request.user.pk):
+        if not (request.user.is_authenticated and owner_id and owner_id == request.user.pk and not is_scheduled):
             raise Http404
     return obj
 
@@ -62,10 +63,10 @@ def home(request):
                        .select_related("province", "organizer")
                        .annotate(participant_count=Count("participants", distinct=True))
                        .order_by("-is_featured", "-likes_count", "starts_at")[:8]),
-        "stories": list(Story.objects.filter(status=Status.PUBLISHED)
+        "stories": list(Story.objects.published()
                         .select_related("featured_person", "featured_company")
                         .order_by("-is_featured", "-likes_count", "-views_count", "-published_at")[:8]),
-        "podcasts": list(Podcast.objects.filter(status=Status.PUBLISHED)
+        "podcasts": list(Podcast.objects.published()
                          .select_related("guest_person", "company")
                          .order_by("-is_featured", "-likes_count", "-views_count", "-published_at")[:8]),
         "stats": {
@@ -268,7 +269,7 @@ def default_og_image(request):
 
 # --------------------------------------------------------------------------- story (câu chuyện & phóng sự)
 def story_list(request):
-    qs = (Story.objects.filter(status=Status.PUBLISHED)
+    qs = (Story.objects.published()
           .select_related("featured_person", "featured_company", "featured_event"))
     story_type = request.GET.get("loai", "").strip()
     if story_type in Story.StoryType.values:
@@ -303,7 +304,8 @@ def story_detail(request, slug):
         Story.objects.select_related("featured_person", "featured_company", "featured_event"),
         slug=slug
     )
-    if story.status != Status.PUBLISHED and not is_editor(request.user):
+    is_scheduled = story.published_at and story.published_at > timezone.now()
+    if (story.status != Status.PUBLISHED or is_scheduled) and not is_editor(request.user):
         raise Http404
 
     # Tăng lượt xem
@@ -311,7 +313,7 @@ def story_detail(request, slug):
     story.views_count += 1
 
     # Bài viết liên quan
-    related_stories = (Story.objects.filter(status=Status.PUBLISHED)
+    related_stories = (Story.objects.published()
                        .exclude(pk=story.pk)
                        .select_related("featured_person", "featured_company")
                        .order_by("-is_featured", "-published_at")[:4])
@@ -438,14 +440,15 @@ def podcast_detail(request, slug):
         Podcast.objects.select_related("guest_person", "company"),
         slug=slug
     )
-    if podcast.status != Status.PUBLISHED and not is_editor(request.user):
+    is_scheduled = podcast.published_at and podcast.published_at > timezone.now()
+    if (podcast.status != Status.PUBLISHED or is_scheduled) and not is_editor(request.user):
         raise Http404
 
     # Tăng lượt xem
     Podcast.objects.filter(pk=podcast.pk).update(views_count=podcast.views_count + 1)
     podcast.views_count += 1
 
-    related_podcasts = (Podcast.objects.filter(status=Status.PUBLISHED)
+    related_podcasts = (Podcast.objects.published()
                         .exclude(pk=podcast.pk)
                         .select_related("guest_person", "company")
                         .filter(series_type=podcast.series_type)[:4])
@@ -767,11 +770,27 @@ def policy_detail(request, code):
 
 
 def _simple_form(request, form_class, template, *, notify_subject, notify_template, initial=None, extra=None):
-    form = form_class(request.POST or None, initial=initial)
-    if request.method == "POST" and form.is_valid():
-        obj = form.save()
-        notify_editors(notify_subject, notify_template, {"obj": obj})
-        return render(request, template, {"done": True, "obj": obj, **(extra or {})})
+    from django.core.cache import cache
+    from apps.common.permissions import client_ip
+
+    ip = client_ip(request) or "unknown"
+    cache_key = f"rate_limit:public_form:{ip}"
+
+    if request.method == "POST":
+        count = cache.get(cache_key, 0)
+        if count >= 10:
+            form = form_class(request.POST, initial=initial)
+            messages.error(request, "Hệ thống phát hiện nhiều yêu cầu gửi liên tục từ địa chỉ mạng của bạn. Vui lòng đợi ít phút trước khi thử lại.")
+            return render(request, template, {"form": form, **(extra or {})}, status=429)
+
+        form = form_class(request.POST, initial=initial)
+        if form.is_valid():
+            cache.set(cache_key, count + 1, timeout=600)
+            obj = form.save()
+            notify_editors(notify_subject, notify_template, {"obj": obj})
+            return render(request, template, {"done": True, "obj": obj, **(extra or {})})
+    else:
+        form = form_class(initial=initial)
     return render(request, template, {"form": form, **(extra or {})})
 
 
