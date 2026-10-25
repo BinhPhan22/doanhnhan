@@ -208,13 +208,20 @@ class Person(SluggedModel):
     def section(self, key):
         return next((s for s in self.sections.all() if s.key == key), None)
 
+    @property
+    def cau_gui_lai(self):
+        sec = self.section("cau_gui_lai")
+        return sec.body_md.strip() if sec and sec.body_md else ""
+
     def completeness(self):
-        """Phần trăm đầy đủ và danh sách mục còn thiếu (dùng cho khung Độ đầy đủ)."""
+        """Phần trăm đầy đủ và danh sách mục còn thiếu (dùng cho khung Độ đầy đủ theo khung 7 mục)."""
         sections = {s.key: s for s in self.sections.all()}
         checks = [
-            ("Tóm tắt", bool(sections.get("summary") and sections["summary"].word_count >= 30)),
-            ("Tiểu sử & học vấn", "biography" in sections),
-            ("Hành trình khởi nghiệp (từ 500 từ)", bool(sections.get("journey") and sections["journey"].word_count >= 500)),
+            ("Thông tin chung", bool(sections.get("thong_tin_chung") or sections.get("summary"))),
+            ("Khởi đầu", bool(sections.get("khoi_dau") or sections.get("biography"))),
+            ("Hiện tại", bool(sections.get("hien_tai"))),
+            ("Khó khăn / Bước ngoặt", bool(sections.get("kho_khan") or sections.get("buoc_ngoat") or sections.get("journey"))),
+            ("Một câu gửi lại", bool(sections.get("cau_gui_lai"))),
             ("Ít nhất 3 dấu mốc", self.milestones.count() >= 3),
             ("Ảnh chân dung", bool(self.portrait)),
             ("Doanh nghiệp", self.company_links.exists()),
@@ -318,12 +325,13 @@ class PersonCompany(models.Model):
 
 # --------------------------------------------------------------------------- nội dung bài viết
 PERSON_SECTIONS = [
-    ("summary", "Tóm tắt", "50–100 từ"),
-    ("biography", "Tiểu sử & học vấn", "100–300 từ"),
-    ("journey", "Hành trình khởi nghiệp & sự nghiệp", "bài viết chính, từ 500 từ"),
-    ("achievements", "Thành tựu & giải thưởng", "tùy chọn"),
-    ("philosophy", "Triết lý kinh doanh & chia sẻ", "tùy chọn"),
-    ("community", "Hoạt động cộng đồng", "tùy chọn"),
+    ("thong_tin_chung", "Thông tin chung", "50–100 từ: họ tên, năm sinh, quê quán, lĩnh vực, doanh nghiệp và vai trò hiện tại"),
+    ("khoi_dau", "Khởi đầu", "100–300 từ: bắt đầu từ đâu, vì sao chọn nghề/ngành này, vốn liếng đầu tiên là gì"),
+    ("kho_khan", "Khó khăn lớn nhất", "100–300 từ: giai đoạn khó nhất, đã vượt qua bằng cách nào — viết thật, không tô hồng"),
+    ("buoc_ngoat", "Bước ngoặt", "100–300 từ: quyết định hoặc sự kiện làm thay đổi hướng đi"),
+    ("bai_hoc", "Bài học", "3–5 ý ngắn: bài học rút ra và lời khuyên cho người đi sau"),
+    ("hien_tai", "Hiện tại", "100–200 từ: đang làm gì, doanh nghiệp/dự án hiện tại, định hướng sắp tới"),
+    ("cau_gui_lai", "Một câu gửi lại", "Tối đa 200 ký tự: một câu kết, hiển thị nổi bật ở đầu hồ sơ"),
 ]
 COMPANY_SECTIONS = [
     ("overview", "Giới thiệu chung", "80–150 từ"),
@@ -333,7 +341,18 @@ COMPANY_SECTIONS = [
     ("achievements", "Thành tựu & chứng nhận", "tùy chọn"),
     ("culture", "Văn hóa & trách nhiệm xã hội", "tùy chọn"),
 ]
-SECTION_LABELS = {k: label for k, label, _ in PERSON_SECTIONS + COMPANY_SECTIONS}
+OLD_PERSON_SECTIONS = [
+    ("summary", "Tóm tắt"),
+    ("biography", "Tiểu sử & học vấn"),
+    ("journey", "Hành trình khởi nghiệp & sự nghiệp"),
+    ("achievements", "Thành tựu & giải thưởng"),
+    ("philosophy", "Triết lý kinh doanh & chia sẻ"),
+    ("community", "Hoạt động cộng đồng"),
+]
+SECTION_LABELS = {
+    **{k: label for k, label in OLD_PERSON_SECTIONS},
+    **{k: label for k, label, _ in PERSON_SECTIONS + COMPANY_SECTIONS},
+}
 
 
 class ArticleSection(models.Model):

@@ -1,6 +1,6 @@
 # doanhnhan.wiki — mã nguồn website
 
-Trang cộng đồng lưu giữ hồ sơ doanh nhân trẻ tiêu biểu Việt Nam: doanh nhân, doanh nghiệp, ngành nghề, hiệp hội, sự kiện, video (chỉ nhúng link). Ai cũng xem được; muốn đưa thông tin lên phải có tài khoản được ban quản trị duyệt, và mọi nội dung đều qua biên tập viên duyệt trước khi công bố.
+Trang cộng đồng lưu giữ hồ sơ doanh nhân Việt Nam: doanh nhân, doanh nghiệp, ngành nghề, hiệp hội, sự kiện, video (chỉ nhúng link). Ai cũng xem được; muốn đưa thông tin lên phải có tài khoản được ban quản trị duyệt, và mọi nội dung đều qua biên tập viên duyệt trước khi công bố.
 
 Công nghệ: **Python 3.12+ / Django 5.2**, **PostgreSQL 16** (máy phát triển dùng được SQLite), giao diện HTML/CSS/JS thuần (không framework), Gunicorn + Nginx + Docker khi triển khai.
 
@@ -14,7 +14,7 @@ Công nghệ: **Python 3.12+ / Django 5.2**, **PostgreSQL 16** (máy phát tri�
 - macOS / Linux: `./chay_local.sh` (trong Terminal)
 - Có Docker Desktop, muốn dùng PostgreSQL giống máy chủ thật: `docker compose -f docker-compose.local.yml up --build`
 
-Mở http://localhost:8000, đăng nhập thử `quantri1@example.com` / `Demo@2026!`.
+Mở http://localhost:8000. Tạo tài khoản quản trị bằng lệnh `python manage.py createsuperuser` để đăng nhập.
 
 Cài thủ công từng bước:
 
@@ -23,8 +23,8 @@ python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py seed_base          # 34 tỉnh/thành, ngành nghề, chính sách, bài viết trang Donate
-python manage.py seed_test          # (tùy chọn) dữ liệu thử HƯ CẤU + 11 tài khoản đủ vai trò; xóa: seed_test --xoa
-python manage.py createsuperuser    # tài khoản quản trị đầu tiên
+python manage.py seed_test          # (tùy chọn dev) dữ liệu thử HƯ CẤU + tài khoản vai trò; xóa: seed_test --xoa
+python manage.py createsuperuser    # tài khoản quản trị đầu tiên (mật khẩu mạnh riêng)
 python manage.py runserver
 ```
 
@@ -34,21 +34,21 @@ Chạy kiểm thử: `python manage.py test` (29 kịch bản: đăng ký → du
 
 **Dùng tệp SQL thay cho lệnh seed** (PostgreSQL): xem `sql/README.md` — `01_cau_truc.sql`, `02_du_lieu_nen.sql`, `03_du_lieu_mau_hu_cau.sql`.
 
-### Tài khoản thử nghiệm (`seed_test`)
+### Tài khoản thử nghiệm cho môi trường phát triển (`seed_test`)
 
-Mật khẩu chung `Demo@2026!` (đổi bằng `--mat-khau`). Trên máy chủ có `DJANGO_DEBUG=0` phải thêm `--xac-nhan`.
+Khi cần kiểm thử phân quyền dev, tạo tài khoản thử bằng lệnh: `python manage.py seed_test --mat-khau "<mật_khẩu_riêng>"`. Trên máy chủ có `DJANGO_DEBUG=0` phải thêm `--xac-nhan`.
 
 | Email | Vai trò | Dùng để thử |
 |---|---|---|
 | quantri1@example.com, quantri2@example.com | Quản trị viên | Duyệt chéo tài khoản tài trợ, xác nhận nâng quyền, chính sách, nhật ký |
 | bientap@example.com | Biên tập viên | Hàng chờ duyệt (3 bài chờ, 1 cần bổ sung), duyệt tài khoản, nhận hồ sơ, phỏng vấn |
-| doanhnhan@example.com | Thành viên (chính chủ) | Quản lý hồ sơ Nguyễn Minh An (mẫu), đã gửi 1 đề xuất sửa |
-| doanhnghiep@example.com | Thành viên (đại diện DN) | Quản lý trang Lá Xanh (mẫu), đã gửi 1 doanh nghiệp mới |
+| doanhnhan@example.com | Thành viên (chính chủ) | Quản lý hồ sơ doanh nhân mẫu, đã gửi 1 đề xuất sửa |
+| doanhnghiep@example.com | Thành viên (đại diện DN) | Quản lý trang doanh nghiệp mẫu, đã gửi 1 doanh nghiệp mới |
 | hiephoi@example.com | Thành viên (đại diện hội) | Có 1 yêu cầu nhận quản lý hồ sơ đang chờ |
 | congtacvien@example.com | Thành viên | Có 1 bài cần bổ sung, 1 bản nháp |
 | choduyet@, canbosung@, tuchoi@, bikhoa@example.com | Chờ duyệt / cần bổ sung / từ chối / bị khóa | Kiểm tra các trạng thái tài khoản |
 
-**Trước khi mở cửa thật:** `python manage.py seed_test --xoa --xac-nhan` — chỉ còn lại dữ liệu nền.
+**Trước khi mở cửa thật:** `python manage.py seed_test --xoa --xac-nhan` — chỉ còn lại dữ liệu nền và tài khoản quản trị thật.
 
 ## 2. Triển khai lên máy chủ (Docker)
 
@@ -86,7 +86,7 @@ Hai thao tác nhạy cảm cần **hai quản trị viên khác nhau**: (1) cấ
 
 | Mục | Ai nhập | Ở đâu | Ghi chú |
 |---|---|---|---|
-| Doanh nhân | Thành viên (chờ duyệt) / Biên tập viên (công bố ngay) | `/thanh-vien/gui/doanh-nhan/`, `/quan-tri/doanh-nhan/` | Thông tin cơ bản, ảnh, doanh nghiệp + vai trò, hiệp hội, 6 mục bài viết (markdown, chú thích `[^1]`), dấu mốc, video, nguồn |
+| Doanh nhân | Thành viên (chờ duyệt) / Biên tập viên (công bố ngay) | `/thanh-vien/gui/doanh-nhan/`, `/quan-tri/doanh-nhan/` | Thông tin cơ bản, ảnh, doanh nghiệp + vai trò, hiệp hội, 7 mục bài viết chuẩn (markdown, chú thích `[^1]`), dấu mốc, video, nguồn |
 | Doanh nghiệp | như trên | `/thanh-vien/gui/doanh-nghiep/`, `/quan-tri/doanh-nghiep/` | MST (kiểm tra định dạng + trùng), ngành chính & phân ngành, 6 mục bài viết, ban lãnh đạo, sản phẩm, dấu mốc, video, nguồn |
 | Ngành nghề | Biên tập viên | `/quan-tri/nganh-nghe/` | 2 cấp: ngành → phân ngành; biểu tượng, mã VSIC |
 | Hiệp hội | Biên tập viên | `/quan-tri/hiep-hoi/` | Cấp, trực thuộc, đối tác; **Hội viên**: thêm, xác nhận, ban chấp hành |

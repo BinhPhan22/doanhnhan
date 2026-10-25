@@ -22,7 +22,16 @@
     {% if rev.state == "pending" or rev.state == "needs_info" %}
     <form class="card stack" method="post" style="gap:12px">{% csrf_token %}
       <h2 class="card-title" style="margin:0">Quyết định</h2>
-      <div class="field"><label for="ghichu">Ghi chú biên tập</label><textarea id="ghichu" name="review_note" class="textarea" rows="4" placeholder="Bắt buộc khi Từ chối hoặc Yêu cầu bổ sung — người gửi sẽ nhận được ghi chú này qua email"></textarea></div>
+      <div class="field">
+        <label for="reason_template">Lý do chuẩn (khi cần bổ sung / từ chối)</label>
+        <select id="reason_template" name="reason_template" class="select" onchange="if(this.value){var t=document.getElementById('ghichu'); if(!t.value){t.value=this.value;}else if(!t.value.includes(this.value)){t.value=this.value+': '+t.value;}}">
+          <option value="">-- Chọn lý do chuẩn có sẵn hoặc tự nhập bên dưới --</option>
+          {% for code, label in reason_templates %}
+            <option value="{{ label }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field"><label for="ghichu">Ghi chú biên tập (chi tiết)</label><textarea id="ghichu" name="review_note" class="textarea" rows="4" placeholder="Bắt buộc khi Từ chối hoặc Yêu cầu bổ sung — người gửi sẽ nhận được ghi chú này qua email"></textarea></div>
       <div class="row" style="gap:8px">
         <button type="submit" name="action" value="approve" class="btn btn-dark" style="flex:1">Duyệt &amp; công bố</button>
         <button type="submit" name="action" value="needs_info" class="btn btn-outline" style="flex:1">Yêu cầu bổ sung</button>

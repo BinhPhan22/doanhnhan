@@ -75,18 +75,35 @@ def dashboard(request):
     })
 
 
+REASON_TEMPLATES = [
+    ("missing_sources", "Thiếu nguồn dẫn chứng cho các thông tin quan trọng"),
+    ("unverified_business", "Thông tin hoạt động kinh doanh chưa xác minh được"),
+    ("copyright_media", "Ảnh chân dung / tài liệu chưa rõ quyền sử dụng"),
+    ("need_neutral_rewrite", "Nội dung mang tính quảng cáo / cần viết lại cho trung thực, khách quan"),
+]
+
+
 @editor_required
 def review(request, pk):
     rev = get_object_or_404(Revision.objects.select_related("author", "person", "company", "reviewer"), pk=pk)
     if request.method == "POST":
-        action, note = request.POST.get("action"), request.POST.get("review_note", "").strip()
+        action = request.POST.get("action")
+        reason_template = request.POST.get("reason_template", "").strip()
+        raw_note = request.POST.get("review_note", "").strip()
+        if reason_template and not raw_note:
+            note = reason_template
+        elif reason_template and raw_note and reason_template not in raw_note:
+            note = f"{reason_template}: {raw_note}"
+        else:
+            note = raw_note
+
         try:
             if action == "approve":
-                services.approve(rev, request.user, note=note, request=request)
+                services.approve(rev, request.user, note=raw_note, request=request)
                 messages.success(request, f"Đã duyệt: {rev.title}")
             elif action in ("needs_info", "reject"):
                 if not note:
-                    messages.error(request, "Vui lòng ghi chú lý do khi yêu cầu bổ sung hoặc từ chối.")
+                    messages.error(request, "Vui lòng chọn hoặc ghi chú lý do khi yêu cầu bổ sung hoặc từ chối.")
                     return redirect("staff:review", pk=pk)
                 services.reject(rev, request.user, note, needs_info=(action == "needs_info"), request=request)
                 messages.success(request, "Đã gửi yêu cầu bổ sung." if action == "needs_info" else "Đã từ chối.")
@@ -101,6 +118,7 @@ def review(request, pk):
         "checks": services.compute_checks(rev.entity_type, rev.data, rev.target) if rev.state == "pending" else rev.checks,
         "author_app": getattr(rev.author, "application", None) if rev.author else None,
         "author_stats": Revision.objects.filter(author=rev.author).values("state").annotate(n=Count("pk")) if rev.author else [],
+        "reason_templates": REASON_TEMPLATES,
     })
 
 

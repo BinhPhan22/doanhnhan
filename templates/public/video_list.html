@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{% if current %}{{ current.title }} – Video – doanhnhan.wiki{% else %}Video – doanhnhan.wiki{% endif %}{% endblock %}
-{% block description %}{% if current %}{{ current.title }} ({{ current.get_kind_display }} · {{ current.platform_label }}). Nghe chính doanh nhân kể chuyện trên doanhnhan.wiki.{% else %}Thư viện video doanh nhân trẻ: phỏng vấn độc quyền, câu chuyện doanh nghiệp và sự kiện.{% endif %}{% endblock %}
+{% block description %}{% if current %}{{ current.title }} ({{ current.get_kind_display }} · {{ current.platform_label }}). Nghe chính doanh nhân kể chuyện trên doanhnhan.wiki.{% else %}Thư viện video doanh nhân: phỏng vấn độc quyền, câu chuyện doanh nghiệp và sự kiện.{% endif %}{% endblock %}
 {% block meta %}
 <meta property="og:title" content="{% if current %}{{ current.title }} – doanhnhan.wiki{% else %}Thư viện Video Doanh nhân – doanhnhan.wiki{% endif %}">
-<meta property="og:description" content="{% if current %}{{ current.get_kind_display }} · {{ current.platform_label }}{% if current.channel_name %} · {{ current.channel_name }}{% endif %}{% else %}Phỏng vấn, câu chuyện doanh nghiệp và ghi hình sự kiện doanh nhân trẻ Việt Nam.{% endif %}">
+<meta property="og:description" content="{% if current %}{{ current.get_kind_display }} · {{ current.platform_label }}{% if current.channel_name %} · {{ current.channel_name }}{% endif %}{% else %}Phỏng vấn, câu chuyện doanh nghiệp và ghi hình sự kiện doanh nhân Việt Nam.{% endif %}">
 <meta property="og:type" content="video.other">
 <meta property="og:url" content="{{ request.build_absolute_uri }}">
 {% if current and current.thumbnail_url %}

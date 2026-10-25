@@ -144,7 +144,9 @@ class RevisionFlowTest(BaseTest):
             "headline": "Nhà sáng lập", "show_birth_year": "on",
             "company_name": ["Công ty Thử Nghiệm Mới"], "company_role": ["founder_ceo"], "company_title": [""],
             "company_start": ["2019"], "company_end": [""], "company_primary": ["1"],
-            "section_summary": "Tóm tắt có chú thích[^1].", "section_journey": "Hành trình " * 20,
+            "section_thong_tin_chung": "Thông tin chung có chú thích[^1].",
+            "section_khoi_dau": "Khởi đầu " * 10,
+            "section_hien_tai": "Hiện tại " * 10,
             "milestone_year": ["2019", "2021"], "milestone_kind": ["founding", "award"],
             "milestone_title": ["Thành lập công ty", "Nhận giải"], "milestone_source": ["", ""],
             "source_title": ["Bài báo A"], "source_url": ["https://example.com/a"], "source_kind": ["press"],
@@ -1174,8 +1176,8 @@ class StoryFeatureTest(BaseTest):
         res_create = self.client.post(reverse("staff:story_new"), {
             "title": "Phóng sự về thế hệ lãnh đạo trẻ",
             "story_type": "event",
-            "summary": "Tóm tắt về diễn đàn doanh nhân trẻ 2026",
-            "content_md": "Diễn đàn quy tụ hơn 500 lãnh đạo trẻ tiêu biểu...",
+            "summary": "Tóm tắt về diễn đàn doanh nhân 2026",
+            "content_md": "Diễn đàn quy tụ hơn 500 lãnh đạo doanh nghiệp...",
             "status": "published",
             "published_at": timezone.now().strftime("%Y-%m-%dT%H:%M"),
         })
@@ -1255,14 +1257,14 @@ class AICrawlerTest(BaseTest):
             "person_headline": "Tổng Giám đốc NewTech",
             "person_gender": "female",
             "person_birth_year": "1992",
-            "person_summary": "Tóm tắt về doanh nhân trẻ",
+            "person_summary": "Tóm tắt về doanh nhân",
             "save_company": "1",
             "company_legal_name": "Công ty TNHH Đổi Mới Sáng Tạo NewTech",
             "company_brand_name": "NewTech VN",
             "company_tax_code": "0109988776",
             "relationship_role": "founder_ceo",
             "relationship_title": "Nhà sáng lập & CEO",
-            "source_title": "Bài viết giới thiệu Doanh nhân trẻ tiêu biểu",
+            "source_title": "Bài viết giới thiệu Doanh nhân tiêu biểu",
             "source_url": "https://tuoitre.vn/bai-viet-gioi-thieu",
             "source_publisher": "Báo Tuổi Trẻ",
             "milestone_year": ["2018", "2024"],
@@ -1415,6 +1417,128 @@ class PodcastFeatureTest(BaseTest):
         res_del = self.client.post(reverse("staff:podcast_delete", args=[new_pod.pk]))
         self.assertEqual(res_del.status_code, 302)
         self.assertFalse(Podcast.objects.filter(pk=new_pod.pk).exists())
+
+
+class SevenSectionsAndPositioningTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.hcm = Province.objects.create(code="tp-ho-chi-minh", name="TP. Hồ Chí Minh", is_city=True)
+        self.member = make_user("thanhvien7@example.com", role="member")
+        self.editor = make_user("bientap7@example.com", role="editor")
+
+    def test_seven_sections_schema_and_labels(self):
+        from apps.directory.models import PERSON_SECTIONS, SECTION_LABELS
+        keys = [k for k, _, _ in PERSON_SECTIONS]
+        self.assertEqual(keys, [
+            "thong_tin_chung", "khoi_dau", "kho_khan", "buoc_ngoat", "bai_hoc", "hien_tai", "cau_gui_lai"
+        ])
+        # Old labels preserved
+        for old_k in ["summary", "biography", "journey", "achievements", "philosophy", "community"]:
+            self.assertIn(old_k, SECTION_LABELS)
+
+    def test_submit_full_seven_sections_then_approve_and_render(self):
+        from apps.directory.models import ArticleSection
+        self.client.force_login(self.member)
+        post_data = {
+            "full_name": "Lê Văn Bảy",
+            "birth_year": "1988",
+            "current_province": self.hcm.pk,
+            "headline": "Nhà sáng lập Tập đoàn 7 Mục",
+            "show_birth_year": "on",
+            "section_thong_tin_chung": "Thông tin chung về doanh nhân Lê Văn Bảy, năm sinh 1988 tại TP.HCM.",
+            "section_khoi_dau": "Bắt đầu khởi nghiệp từ một xưởng sản xuất nhỏ với số vốn ban đầu tự có.",
+            "section_kho_khan": "Giai đoạn khó khăn nhất là năm thứ 3 khi đối mặt với nguy cơ đứt gãy dòng tiền.",
+            "section_buoc_ngoat": "Bước ngoặt là quyết định chuyển dịch sang sản phẩm số hóa toàn diện.",
+            "section_bai_hoc": "- Chữ tín là hàng đầu.\n- Quản trị dòng tiền thận trọng.\n- Đồng hành cùng đội ngũ.",
+            "section_hien_tai": "Hiện tại công ty đang mở rộng chi nhánh tại 5 thành phố lớn trên cả nước.",
+            "section_cau_gui_lai": "Kiên trì tới cùng, không có con đường tắt nào thay thế được sự cố gắng.",
+            "milestone_year": ["2015", "2020", "2024"],
+            "milestone_kind": ["founding", "growth", "award"],
+            "milestone_title": ["Thành lập xưởng", "Mở rộng nhà máy", "Giải thưởng uy tín"],
+            "milestone_source": ["", "", ""],
+            "source_title": ["Báo Đầu Tư", "Báo Tuổi Trẻ"],
+            "source_url": ["https://baodautu.vn/bai-viet", "https://tuoitre.vn/bai-viet"],
+            "source_kind": ["press", "press"],
+            "action": "submit",
+        }
+        res = self.client.post(reverse("member:person_create"), post_data)
+        self.assertRedirects(res, reverse("member:dashboard"))
+
+        rev = Revision.objects.filter(author=self.member).first()
+        self.assertIsNotNone(rev)
+        self.assertEqual(rev.state, Revision.State.PENDING)
+
+        # Editor reviews and approves
+        self.client.force_login(self.editor)
+        res_approve = self.client.post(reverse("staff:review", args=[rev.pk]), {"action": "approve"})
+        self.assertEqual(res_approve.status_code, 302)
+
+        person = Person.objects.get(full_name="Lê Văn Bảy")
+        self.assertEqual(person.status, Status.PUBLISHED)
+        self.assertEqual(person.cau_gui_lai, "Kiên trì tới cùng, không có con đường tắt nào thay thế được sự cố gắng.")
+
+        # Check sections order in database
+        sections = list(person.sections.all())
+        self.assertEqual(len(sections), 7)
+        expected_order = ["thong_tin_chung", "khoi_dau", "kho_khan", "buoc_ngoat", "bai_hoc", "hien_tai", "cau_gui_lai"]
+        for idx, expected_key in enumerate(expected_order):
+            self.assertEqual(sections[idx].key, expected_key)
+            self.assertEqual(sections[idx].sort_order, idx)
+
+        # Check web rendering
+        page = self.client.get(person.get_absolute_url())
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "“Kiên trì tới cùng, không có con đường tắt nào thay thế được sự cố gắng.”")
+        for expected_key in expected_order:
+            self.assertContains(page, f'id="muc-{expected_key}"')
+
+        # Check print rendering
+        print_page = self.client.get(reverse("public:person_print", args=[person.slug]))
+        self.assertEqual(print_page.status_code, 200)
+        self.assertContains(print_page, "“Kiên trì tới cùng, không có con đường tắt nào thay thế được sự cố gắng.”")
+
+    def test_submit_missing_optional_sections_gives_warning(self):
+        self.client.force_login(self.member)
+        post_data = {
+            "full_name": "Trần Văn Thiếu",
+            "birth_year": "1995",
+            "current_province": self.hcm.pk,
+            "headline": "Giám đốc điều hành",
+            "section_thong_tin_chung": "Thông tin chung Trần Văn Thiếu.",
+            "section_khoi_dau": "Khởi đầu từ năm 2021.",
+            "section_hien_tai": "Hiện tại đang điều hành doanh nghiệp.",
+            "action": "submit",
+        }
+        res = self.client.post(reverse("member:person_create"), post_data)
+        self.assertRedirects(res, reverse("member:dashboard"))
+
+        rev = Revision.objects.filter(author=self.member).first()
+        self.assertIsNotNone(rev)
+        self.assertEqual(rev.state, Revision.State.PENDING)
+        # Checks warning for missing optional sections
+        warn_texts = [c["text"] for c in rev.checks]
+        self.assertTrue(any("Khó khăn lớn nhất" in t for t in warn_texts))
+        self.assertTrue(any("Bước ngoặt" in t for t in warn_texts))
+
+    def test_repositioning_wording_on_public_pages(self):
+        res_home = self.client.get(reverse("public:home"))
+        self.assertEqual(res_home.status_code, 200)
+        self.assertContains(res_home, "Nơi lưu giữ hành trình của mọi doanh nhân Việt Nam.")
+        self.assertNotContains(res_home, "doanh nhân trẻ tiêu biểu")
+
+        res_persons = self.client.get(reverse("public:person_list"))
+        self.assertEqual(res_persons.status_code, 200)
+        self.assertContains(res_persons, "<h1>Doanh nhân</h1>")
+        self.assertNotContains(res_persons, "Doanh nhân trẻ tiêu biểu")
+
+        res_companies = self.client.get(reverse("public:company_list"))
+        self.assertEqual(res_companies.status_code, 200)
+        self.assertContains(res_companies, "<h1>Doanh nghiệp của doanh nhân</h1>")
+
+        res_about = self.client.get(reverse("public:about"))
+        self.assertEqual(res_about.status_code, 200)
+        self.assertContains(res_about, "Nơi lưu giữ hành trình của mọi doanh nhân Việt Nam.")
+        self.assertContains(res_about, "Tiêu chí đăng hồ sơ")
 
 
 

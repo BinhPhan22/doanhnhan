@@ -195,11 +195,11 @@ POLICIES = [
      "Chỉ nhận qua tài khoản công bố trên trang Donate.\nTài trợ không ảnh hưởng việc duyệt hồ sơ."),
 ]
 
-DONATION_LEAD = ("Mỗi doanh nhân trẻ tiêu biểu là một câu chuyện về khát vọng, bản lĩnh và đóng góp cho nền kinh tế. "
+DONATION_LEAD = ("Mỗi doanh nhân là một câu chuyện về khát vọng, bản lĩnh và đóng góp cho nền kinh tế. "
                  "doanhnhan.wiki ra đời để những câu chuyện ấy được ghi chép đầy đủ, xác minh cẩn thận và lưu giữ lâu dài "
                  "— để hôm nay có nơi tra cứu, và thế hệ sau có nơi học hỏi.")
 DONATION_BODY = """## Vì sao cần doanhnhan.wiki
-Thông tin về doanh nhân trẻ hôm nay nằm rải rác trên báo chí, mạng xã hội và hồ sơ của các hiệp hội — khó tìm, khó kiểm chứng và dễ thất lạc theo thời gian. doanhnhan.wiki gom những thông tin ấy về một nơi: hồ sơ doanh nhân, doanh nghiệp, dấu mốc sự nghiệp, sự kiện và video phỏng vấn. Mỗi thông tin đều có nguồn trích dẫn và lịch sử chỉnh sửa minh bạch. Việc tra cứu luôn miễn phí cho tất cả mọi người.
+Thông tin về doanh nhân hôm nay nằm rải rác trên báo chí, mạng xã hội và hồ sơ của các hiệp hội — khó tìm, khó kiểm chứng và dễ thất lạc theo thời gian. doanhnhan.wiki gom những thông tin ấy về một nơi: hồ sơ doanh nhân, doanh nghiệp, dấu mốc sự nghiệp, sự kiện và video phỏng vấn. Mỗi thông tin đều có nguồn trích dẫn và lịch sử chỉnh sửa minh bạch. Việc tra cứu luôn miễn phí cho tất cả mọi người.
 
 ## Chi phí để trang được duy trì
 Để một kho dữ liệu đáng tin cậy tồn tại lâu dài, doanhnhan.wiki cần chi trả thường xuyên cho:
@@ -211,14 +211,14 @@ Thông tin về doanh nhân trẻ hôm nay nằm rải rác trên báo chí, m�
 - **Phát triển tính năng** — giúp cộng đồng tra cứu và kết nối dễ dàng hơn.
 
 ## Mọi khoản tài trợ đều quý giá
-Không có mức tối thiểu. Dù nhiều hay ít, khoản tài trợ của anh chị là sự tiếp sức để doanhnhan.wiki tiếp tục ghi lại hành trình của doanh nhân trẻ Việt Nam. Toàn bộ kinh phí nhận được được dùng cho hoạt động của trang.
+Không có mức tối thiểu. Dù nhiều hay ít, khoản tài trợ của anh chị là sự tiếp sức để doanhnhan.wiki tiếp tục ghi lại hành trình của mọi doanh nhân Việt Nam. Toàn bộ kinh phí nhận được được dùng cho hoạt động của trang.
 
 **Trân trọng cảm ơn anh chị đã đồng hành!**
 
 *Ban vận hành doanhnhan.wiki*
 """
 
-ABOUT = """doanhnhan.wiki là **trang cộng đồng** lưu giữ hồ sơ doanh nhân trẻ tiêu biểu Việt Nam: doanh nghiệp, ngành nghề, hiệp hội, sự kiện và video phỏng vấn.
+ABOUT = """doanhnhan.wiki là **trang cộng đồng** lưu giữ hồ sơ doanh nhân Việt Nam: doanh nghiệp, ngành nghề, hiệp hội, sự kiện và video phỏng vấn.
 
 - **Ai cũng xem được** — không cần tài khoản.
 - **Muốn đưa thông tin lên** — tạo tài khoản và chờ ban quản trị duyệt; mỗi nội dung vẫn được biên tập viên kiểm duyệt trước khi công bố.
@@ -226,6 +226,17 @@ ABOUT = """doanhnhan.wiki là **trang cộng đồng** lưu giữ hồ sơ doanh
 - **Video** chỉ được nhúng từ nền tảng gốc, trang không lưu trữ tệp video.
 
 Muốn kể câu chuyện của mình trước ống kính? Hãy liên hệ để được ghi hình, phỏng vấn.
+
+<h2 id="tieu-chi">Tiêu chí đăng hồ sơ</h2>
+
+Mọi hồ sơ trên doanhnhan.wiki được kiểm duyệt công khai theo 4 tiêu chí:
+
+1. **Người thật, việc thật:** Có hoạt động kinh doanh xác minh được bằng ít nhất một trong: mã số thuế doanh nghiệp/hộ kinh doanh, website/fanpage chính thức, bài báo đã đăng, hoặc xác nhận của hiệp hội/YBA.
+2. **Thông tin minh bạch, có kiểm chứng:** Thông tin có nguồn, số liệu và thành tích phải kiểm chứng được; không bịa đặt, không phóng đại.
+3. **Chuẩn mực nội dung:** Không có nội dung vi phạm pháp luật, không công kích cá nhân, không quảng cáo trá hình.
+4. **Đồng thuận và quyền dữ liệu:** Chủ hồ sơ đồng ý công khai thông tin trên trang; muốn sửa hoặc gỡ thì gửi yêu cầu qua mục "Yêu cầu về dữ liệu".
+
+*Cam kết xử lý:* Ban biên tập phản hồi hồ sơ trong vòng **3 ngày làm việc**. Nếu cần bổ sung, bạn sẽ nhận email nêu rõ nội dung cần bổ sung.
 """
 
 

@@ -14,6 +14,10 @@
       <li><b>Ban quản trị duyệt</b> tài khoản, có thể liên hệ để xác minh.</li>
       <li><b>Đưa thông tin lên:</b> hồ sơ, doanh nghiệp, dấu mốc — mỗi lần gửi vẫn được biên tập viên duyệt trước khi công bố.</li>
     </ol>
+    <div style="margin:14px 0;padding:12px 16px;background:rgba(201,162,74,0.1);border-left:3px solid var(--gold-dark);border-radius:6px;font-size:13px;line-height:1.6;color:var(--ink)">
+      <p style="margin:0 0 4px"><strong>Cam kết thời gian:</strong> Ban biên tập phản hồi trong <strong>3 ngày làm việc</strong>. Nếu cần bổ sung, bạn sẽ nhận email nêu rõ cần bổ sung gì.</p>
+      <p style="margin:0">Vui lòng tham khảo trước <a href="{% url 'public:about' %}#tieu-chi" target="_blank" rel="noopener" style="font-weight:600;text-decoration:underline">Tiêu chí đăng hồ sơ</a> để tài khoản và thông tin được xử lý thuận lợi.</p>
+    </div>
     {% if GOOGLE_ENABLED and not complete %}<a class="btn btn-outline btn-block" href="{% url 'accounts:google_start' %}">{% include "partials/google_icon.html" %} Đăng ký bằng Google</a>
     <div class="divider"><span>hoặc đăng ký bằng email</span></div>{% endif %}
     {% if form.non_field_errors %}<div class="flash flash-error">{{ form.non_field_errors|join:" " }}</div>{% endif %}

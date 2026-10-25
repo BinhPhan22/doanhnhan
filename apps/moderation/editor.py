@@ -5,18 +5,29 @@ from apps.directory.models import (
 )
 
 SECTION_HELP = {
-    "summary": ("Hiện ở đầu hồ sơ và trên thẻ tìm kiếm: là ai, làm gì, nổi bật vì điều gì.", 3),
-    "biography": ("Xuất thân, quá trình học tập, bằng cấp, những người hoặc trải nghiệm ảnh hưởng.", 5),
-    "journey": ("Phần quan trọng nhất: ý tưởng ban đầu, khó khăn, bước ngoặt, cách vượt qua, kết quả. "
-                "Có thể chia mục con bằng “Tiêu đề mục”.", 14),
-    "achievements": ("Giải thưởng, danh hiệu, con số có nguồn kiểm chứng (chỉ khi đã công bố công khai).", 5),
-    "philosophy": ("Quan điểm, giá trị cốt lõi, lời khuyên cho người trẻ. Trích dẫn trực tiếp đặt trong ngoặc kép.", 5),
-    "community": ("Hiệp hội, chức danh trong hội, thiện nguyện, cố vấn khởi nghiệp.", 4),
+    # 7 mục chuẩn mới cho doanh nhân
+    "thong_tin_chung": ("50–100 từ: họ tên, năm sinh, quê quán, lĩnh vực, doanh nghiệp và vai trò hiện tại (bắt buộc).", 4),
+    "khoi_dau": ("100–300 từ: bắt đầu từ đâu, vì sao chọn nghề/ngành này, vốn liếng đầu tiên là gì (bắt buộc).", 6),
+    "kho_khan": ("100–300 từ: giai đoạn khó nhất, đã vượt qua bằng cách nào — viết thật, không tô hồng (nên có).", 6),
+    "buoc_ngoat": ("100–300 từ: quyết định hoặc sự kiện làm thay đổi hướng đi (nên có).", 6),
+    "bai_hoc": ("3–5 ý ngắn: bài học rút ra và lời khuyên cho người đi sau (nên có).", 5),
+    "hien_tai": ("100–200 từ: đang làm gì, doanh nghiệp/dự án hiện tại, định hướng sắp tới (bắt buộc).", 5),
+    "cau_gui_lai": ("Tối đa 200 ký tự: một câu kết, hiển thị nổi bật ở đầu hồ sơ (nên có).", 3),
+
+    # Khung doanh nghiệp
     "overview": ("Doanh nghiệp làm gì, cho ai, điểm khác biệt.", 4),
     "history": ("Hoàn cảnh ra đời, các giai đoạn phát triển, bước ngoặt, mở rộng.", 12),
     "products": ("Các dòng sản phẩm, dịch vụ chính; công nghệ, tiêu chuẩn chất lượng áp dụng.", 5),
     "market": ("Khu vực hoạt động, nhóm khách hàng chính, đối tác tiêu biểu đã công khai.", 4),
     "culture": ("Giá trị cốt lõi, môi trường làm việc, hoạt động cộng đồng của doanh nghiệp.", 4),
+
+    # Khóa cũ (giữ để tương thích dữ liệu cũ)
+    "summary": ("Hiện ở đầu hồ sơ và trên thẻ tìm kiếm: là ai, làm gì, nổi bật vì điều gì.", 3),
+    "biography": ("Xuất thân, quá trình học tập, bằng cấp, những người hoặc trải nghiệm ảnh hưởng.", 5),
+    "journey": ("Phần quan trọng nhất: ý tưởng ban đầu, khó khăn, bước ngoặt, cách vượt qua, kết quả.", 14),
+    "achievements": ("Giải thưởng, danh hiệu, con số có nguồn kiểm chứng.", 5),
+    "philosophy": ("Quan điểm, giá trị cốt lõi, lời khuyên.", 5),
+    "community": ("Hiệp hội, chức danh trong hội, thiện nguyện.", 4),
 }
 SECTION_HELP_COMPANY = {"achievements": ("Giải thưởng, chứng nhận ISO/HACCP… đã công bố, kèm nguồn.", 4)}
 

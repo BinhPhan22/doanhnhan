@@ -404,7 +404,6 @@ def compute_checks(entity_type, data, instance=None):
                                                     "bản nháp: " + ", ".join(new_companies)})
         if not data.get("companies"):
             checks.append({"level": "warn", "text": "Chưa gắn doanh nghiệp nào."})
-        main, main_label, minimum = "journey", "Hành trình khởi nghiệp", 500
     else:
         tax = data.get("tax_code")
         if tax:
@@ -429,17 +428,34 @@ def compute_checks(entity_type, data, instance=None):
                                                     "bản nháp: " + ", ".join(new_people)})
         if not data.get("primary_sector"):
             checks.append({"level": "warn", "text": "Chưa chọn ngành chính."})
-        main, main_label, minimum = "history", "Lịch sử hình thành & phát triển", 400
 
     sections = data.get("sections", {})
-    words = word_count(sections.get(main, ""))
-    if words < minimum:
-        checks.append({"level": "warn", "text": f"Bài viết “{main_label}” mới có {words} từ (khuyến nghị từ {minimum} từ)."})
+    if entity_type == "person":
+        # 3 mục bắt buộc
+        if not sections.get("thong_tin_chung") and not sections.get("summary"):
+            checks.append({"level": "warn", "text": "Thiếu phần “Thông tin chung” (mục bắt buộc)."})
+        if not sections.get("khoi_dau") and not sections.get("biography"):
+            checks.append({"level": "warn", "text": "Thiếu phần “Khởi đầu” (mục bắt buộc)."})
+        if not sections.get("hien_tai"):
+            checks.append({"level": "warn", "text": "Thiếu phần “Hiện tại” (mục bắt buộc)."})
+
+        # Các mục nên có: cảnh báo nếu trống khi gửi duyệt, nhưng vẫn cho gửi
+        if not sections.get("kho_khan"):
+            checks.append({"level": "warn", "text": "Chưa có phần “Khó khăn lớn nhất” (khuyến nghị viết thật, không tô hồng)."})
+        if not sections.get("buoc_ngoat"):
+            checks.append({"level": "warn", "text": "Chưa có phần “Bước ngoặt” (khuyến nghị nêu sự kiện làm thay đổi hướng đi)."})
+        if not sections.get("bai_hoc"):
+            checks.append({"level": "info", "text": "Chưa có phần “Bài học” (khuyến nghị 3–5 ý ngắn cho người đi sau)."})
+        if not sections.get("cau_gui_lai"):
+            checks.append({"level": "info", "text": "Chưa có “Một câu gửi lại” (sẽ hiển thị nổi bật ở đầu hồ sơ)."})
     else:
-        checks.append({"level": "ok", "text": f"Bài viết “{main_label}” có {words} từ."})
-    summary_key = "summary" if entity_type == "person" else "overview"
-    if not sections.get(summary_key):
-        checks.append({"level": "warn", "text": "Thiếu đoạn tóm tắt / giới thiệu chung."})
+        words = word_count(sections.get("history", ""))
+        if words < 400:
+            checks.append({"level": "warn", "text": f"Bài viết “Lịch sử hình thành & phát triển” mới có {words} từ (khuyến nghị từ 400 từ)."})
+        else:
+            checks.append({"level": "ok", "text": f"Bài viết “Lịch sử hình thành & phát triển” có {words} từ."})
+        if not sections.get("overview"):
+            checks.append({"level": "warn", "text": "Thiếu đoạn tóm tắt / giới thiệu chung."})
     if len(data.get("milestones", [])) < 3:
         checks.append({"level": "warn", "text": "Nên có ít nhất 3 dấu mốc để dựng dòng thời gian."})
     source_count = len(data.get("sources", []))

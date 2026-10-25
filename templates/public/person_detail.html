@@ -50,6 +50,11 @@
         </div>
       {% endif %}
       <p style="margin:6px 0 16px;color:var(--muted);font-size:15px">{% if link %}{{ link.label }} <a href="{{ link.company.get_absolute_url }}">{{ link.company.display_name }}</a>{% else %}{{ person.headline }}{% endif %}{% for m in person.memberships.all|slice:":1" %} · {{ m.position }} <a href="{{ m.association.get_absolute_url }}">{{ m.association.short_name|default:m.association.name }}</a>{% endfor %}</p>
+      {% if person.cau_gui_lai %}
+        <blockquote class="lead-quote" style="margin:8px 0 16px;padding:12px 18px;border-left:3px solid var(--gold-dark);background:rgba(201,162,74,0.08);border-radius:0 8px 8px 0;font-family:var(--font-serif);font-size:16px;font-style:italic;line-height:1.6;color:var(--ink)">
+          “{{ person.cau_gui_lai }}”
+        </blockquote>
+      {% endif %}
     </div>
     <nav class="page-tabs" aria-label="Các mục của hồ sơ">
       <a href="{{ person.get_absolute_url }}" aria-current="page">Hồ sơ</a>
@@ -88,7 +93,13 @@
 
       {% for s in person.sections.all %}
         <h2 id="muc-{{ s.key }}"{% if forloop.first %} style="margin-top:28px"{% endif %}>{{ s.label }}</h2>
-        {{ s.body_md|md }}
+        {% if s.key == "cau_gui_lai" %}
+          <blockquote style="font-family:var(--font-serif);font-size:18px;font-style:italic;padding:12px 20px;border-left:4px solid var(--gold-dark);background:rgba(201,162,74,0.08);margin:16px 0;line-height:1.6">
+            “{{ s.body_md }}”
+          </blockquote>
+        {% else %}
+          {{ s.body_md|md }}
+        {% endif %}
       {% empty %}
         <p class="muted" style="margin-top:24px">Hồ sơ chưa có bài viết chi tiết. {% if user.is_authenticated %}<a href="{% url 'member:person_edit' person.slug %}">Đóng góp nội dung →</a>{% endif %}</p>
       {% endfor %}

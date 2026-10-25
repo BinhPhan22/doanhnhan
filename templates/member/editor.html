@@ -4,6 +4,9 @@
 {% include "member/_hero.html" with heading=heading %}
 <div class="container layout">
   <form class="main stack" method="post" enctype="multipart/form-data" style="gap:20px" novalidate>{% csrf_token %}
+    <div style="padding:12px 16px;background:rgba(201,162,74,0.08);border-left:3px solid var(--gold-dark);border-radius:6px;font-size:13.5px;line-height:1.6;color:var(--ink)">
+      <strong>Cam kết thời gian:</strong> Ban biên tập phản hồi trong <strong>3 ngày làm việc</strong>. Nếu cần bổ sung, bạn sẽ nhận email nêu rõ cần bổ sung gì. Vui lòng đối chiếu <a href="{% url 'public:about' %}#tieu-chi" target="_blank" rel="noopener" style="font-weight:600;text-decoration:underline">Tiêu chí đăng hồ sơ</a> để nội dung được duyệt nhanh chóng.
+    </div>
     {% if revision.state == "needs_info" %}<div class="flash flash-warning"><b>Ban biên tập cần bổ sung:</b> {{ revision.review_note }}</div>{% endif %}
     {% if instance %}<p class="note">Bạn đang đề xuất sửa trang <a href="{{ instance.get_absolute_url }}">{{ instance }}</a>. Nội dung hiện tại đã được điền sẵn — chỉ cần sửa phần muốn thay đổi. Bản đề xuất được ban biên tập duyệt trước khi công bố.</p>{% endif %}
     {% if entity_type == "person" %}{% include "editor/person.html" %}{% else %}{% include "editor/company.html" %}{% endif %}

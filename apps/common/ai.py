@@ -10,7 +10,7 @@ from django.conf import settings
 
 log = logging.getLogger(__name__)
 
-BASE_SYSTEM_PROMPT = """Bạn là Trợ lý AI của Ban Biên Tập bách khoa thư doanhnhan.wiki (nền tảng lưu giữ hành trình của doanh nhân trẻ tiêu biểu và doanh nghiệp Việt Nam).
+BASE_SYSTEM_PROMPT = """Bạn là Trợ lý AI của Ban Biên Tập bách khoa thư doanhnhan.wiki (nền tảng lưu giữ hành trình của mọi doanh nhân và doanh nghiệp Việt Nam).
 Bạn đang trò chuyện trực tiếp với Ban biên tập hoặc Quản trị viên của trang.
 
 Nhiệm vụ của bạn:
@@ -163,7 +163,7 @@ def fallback_editorial_chat(messages: list, context_info: dict = None) -> str:
         name = target_name or "Doanh nhân"
         return (
             f"Dưới đây là đoạn tóm tắt mở đầu chuẩn bách khoa theo yêu cầu của bạn:\n\n"
-            f"**{name}** là một doanh nhân trẻ tiêu biểu tại Việt Nam. "
+            f"**{name}** là một doanh nhân tại Việt Nam. "
             f"Ông/Bà được biết đến với vai trò lãnh đạo và phát triển các mô hình doanh nghiệp đổi mới sáng tạo, "
             f"tạo ra nhiều giá trị thiết thực cho ngành nghề và cộng đồng kinh doanh.\n\n"
             f"Hồ sơ tại doanhnhan.wiki ghi nhận hành trình lập nghiệp, tư duy quản trị và những đóng góp bền vững của {name} "

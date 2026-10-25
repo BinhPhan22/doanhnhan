@@ -318,7 +318,7 @@ def generate_default_og_image():
     draw.text(((width - w) / 2, 200), title_text, fill="#E3C77A", font=font_title)
 
     font_lead = _get_font(24, bold=True)
-    lead_text = "Nơi lưu giữ hành trình của doanh nhân trẻ tiêu biểu Việt Nam"
+    lead_text = "Nơi lưu giữ hành trình của mọi doanh nhân Việt Nam"
     bbox = draw.textbbox((0, 0), lead_text, font=font_lead)
     w = bbox[2] - bbox[0]
     draw.text(((width - w) / 2, 275), lead_text, fill="#FFFFFF", font=font_lead)

@@ -129,15 +129,18 @@ class Command(BaseCommand):
             PersonCompany.objects.create(person=person, company=company, role=ROLES[i % 5], start_year=founded,
                                          is_primary=True)
             texts = {
-                "summary": f"{name.replace(' (hồ sơ mẫu)', '')} là nhân vật hư cấu, {person.headline.lower()}, "
-                           f"hoạt động trong lĩnh vực {sub.name.lower()} tại {prov[pcode].name}.[^1]",
-                "biography": "Đoạn mẫu cho phần tiểu sử & học vấn: xuất thân, quá trình học tập, bằng cấp, "
-                             "những trải nghiệm ảnh hưởng tới lựa chọn kinh doanh.",
-                "journey": JOURNEY,
+                "thong_tin_chung": f"{name.replace(' (hồ sơ mẫu)', '')} là nhân vật hư cấu, {person.headline.lower()}, "
+                                  f"hoạt động trong lĩnh vực {sub.name.lower()} tại {prov[pcode].name}.[^1]",
+                "khoi_dau": f"Bắt đầu hành trình khởi nghiệp từ năm {founded} trong lĩnh vực {sub.name.lower()}. "
+                            "Tích lũy vốn liếng ban đầu và từng bước gây dựng thương hiệu từ những khách hàng đầu tiên.",
+                "kho_khan": "Giai đoạn khó nhất là thời gian đầu khi đối mặt với cạnh tranh gay gắt và biến động thị trường. "
+                            "Doanh nghiệp đã vượt qua nhờ kiên định tối ưu chất lượng và giữ chữ tín.",
+                "buoc_ngoat": "Bước ngoặt quan trọng là quyết định chuyển đổi số và mở rộng kênh phân phối, "
+                              "tạo đà bứt phá cho doanh số và thị phần.",
+                "bai_hoc": "- Minh bạch và uy tín là tài sản lớn nhất.\n- Lấy trải nghiệm khách hàng làm kim chỉ nam.\n- Kiên trì vượt khó, dám thay đổi khi cần thiết.",
+                "hien_tai": f"Hiện tại, tiếp tục giữ vai trò quản trị tại {brand}, định hướng phát triển bền vững và mở rộng quy mô.",
+                "cau_gui_lai": "Kiên trì với con đường đã chọn, quá trình cố gắng sẽ được ghi nhận xứng đáng.",
             }
-            if i % 2 == 0:
-                texts["achievements"] = f"- {founded + 5} — Giải thưởng doanh nhân trẻ (mẫu).[^2]"
-                texts["philosophy"] = "> “Câu nói tiêu biểu thể hiện triết lý kinh doanh (mẫu).”"
             for order, (key, body) in enumerate(texts.items()):
                 ArticleSection.objects.create(person=person, key=key, body_md=body, word_count=word_count(body),
                                               sort_order=order)
@@ -150,7 +153,7 @@ class Command(BaseCommand):
                                               sort_order=order)
             for y, kind, title in [(founded, "founding", f"Thành lập {brand}"),
                                    (founded + 3, "product", "Ra mắt sản phẩm chủ lực (mẫu)"),
-                                   (founded + 6, "award", "Nhận giải thưởng doanh nhân trẻ (mẫu)")]:
+                                   (founded + 6, "award", "Nhận giải thưởng Doanh nhân tiêu biểu (mẫu)")]:
                 Milestone.objects.create(person=person, year=y, kind=kind, title=title)
                 Milestone.objects.create(company=company, year=y, kind=kind, title=title)
             for n, (title, kind) in enumerate([("Nguồn mẫu – Cổng thông tin đăng ký doanh nghiệp", "registry"),
@@ -175,7 +178,7 @@ class Command(BaseCommand):
                 p = people[(e_idx * 4 + k) % 24]
                 role = roles[k]
                 ep = EventParticipant.objects.create(event=e, person=p, role=role,
-                                                     note="Giải Doanh nhân trẻ tiêu biểu (mẫu)" if role == "awardee" else "")
+                                                     note="Giải Doanh nhân tiêu biểu (mẫu)" if role == "awardee" else "")
                 if e.starts_at < now and role in ("speaker", "awardee"):
                     ep.milestone = Milestone.objects.create(
                         person=p, year=e.starts_at.year, kind="award" if role == "awardee" else "community",

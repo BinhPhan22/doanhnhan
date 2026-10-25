@@ -327,23 +327,37 @@
     </div>
   </div>
 
-  {% if sections.summary %}
-  <div class="section-block">
-    <h3 class="section-title">1. Tóm tắt tiểu sử</h3>
-    <div class="section-body">
-      {{ sections.summary.body_md|md }}
-    </div>
+  {% if person.cau_gui_lai or sections.cau_gui_lai %}
+  <div style="margin: 16px 0 20px; padding: 12px 18px; border-left: 3px solid var(--gold-dark); background: var(--bg-soft); font-style: italic; font-size: 14px; line-height: 1.6;">
+    “{{ person.cau_gui_lai|default:sections.cau_gui_lai.body_md }}”
   </div>
   {% endif %}
 
-  {% if sections.journey %}
+  {% for s in person.sections.all %}
   <div class="section-block">
-    <h3 class="section-title">2. Hành trình khởi nghiệp &amp; Sự nghiệp</h3>
+    <h3 class="section-title">{{ forloop.counter }}. {{ s.label }}</h3>
     <div class="section-body">
-      {{ sections.journey.body_md|md }}
+      {{ s.body_md|md }}
     </div>
   </div>
-  {% endif %}
+  {% empty %}
+    {% if sections.summary %}
+    <div class="section-block">
+      <h3 class="section-title">1. Tóm tắt tiểu sử</h3>
+      <div class="section-body">
+        {{ sections.summary.body_md|md }}
+      </div>
+    </div>
+    {% endif %}
+    {% if sections.journey %}
+    <div class="section-block">
+      <h3 class="section-title">2. Hành trình khởi nghiệp &amp; Sự nghiệp</h3>
+      <div class="section-body">
+        {{ sections.journey.body_md|md }}
+      </div>
+    </div>
+    {% endif %}
+  {% endfor %}
 
   {% if person.milestones.all %}
   <div class="section-block">

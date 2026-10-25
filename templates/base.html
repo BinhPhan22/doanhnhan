@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}doanhnhan.wiki – Nơi lưu giữ hành trình của doanh nhân trẻ tiêu biểu Việt Nam{% endblock %}</title>
-<meta name="description" content="{% block description %}Hồ sơ doanh nhân trẻ tiêu biểu Việt Nam: doanh nghiệp, dấu mốc, sự kiện và video phỏng vấn — xác minh, có nguồn và lịch sử sửa đổi minh bạch.{% endblock %}">
+<title>{% block title %}doanhnhan.wiki – Nơi lưu giữ hành trình của mọi doanh nhân Việt Nam{% endblock %}</title>
+<meta name="description" content="{% block description %}Hồ sơ doanh nhân Việt Nam: doanh nghiệp, dấu mốc, sự kiện và video phỏng vấn — xác minh, có nguồn và lịch sử sửa đổi minh bạch.{% endblock %}">
 <meta name="robots" content="{% block robots %}index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1{% endblock %}">
 {% block canonical %}<link rel="canonical" href="{{ SITE_URL }}{{ request.path }}">{% endblock %}
 {% block meta %}
-<meta property="og:title" content="doanhnhan.wiki – Bách khoa toàn thư Doanh nhân trẻ Việt Nam">
-<meta property="og:description" content="Nơi lưu giữ hành trình của doanh nhân trẻ tiêu biểu Việt Nam: doanh nghiệp, dấu mốc, sự kiện và video phỏng vấn — xác minh, có nguồn và lịch sử sửa đổi minh bạch.">
+<meta property="og:title" content="doanhnhan.wiki – Nơi lưu giữ hành trình của mọi doanh nhân Việt Nam">
+<meta property="og:description" content="Nơi lưu giữ hành trình của mọi doanh nhân Việt Nam: doanh nghiệp, dấu mốc, sự kiện và video phỏng vấn — xác minh, có nguồn và lịch sử sửa đổi minh bạch.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="{{ request.build_absolute_uri }}">
 <meta property="og:site_name" content="doanhnhan.wiki">
@@ -19,8 +19,8 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:type" content="image/png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="doanhnhan.wiki – Bách khoa toàn thư Doanh nhân trẻ">
-<meta name="twitter:description" content="Nơi lưu giữ hành trình của doanh nhân trẻ tiêu biểu Việt Nam: doanh nghiệp, dấu mốc, sự kiện và video phỏng vấn.">
+<meta name="twitter:title" content="doanhnhan.wiki – Nơi lưu giữ hành trình của mọi doanh nhân Việt Nam">
+<meta name="twitter:description" content="Nơi lưu giữ hành trình của mọi doanh nhân Việt Nam: doanh nghiệp, dấu mốc, sự kiện và video phỏng vấn.">
 <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% url 'public:default_og_image' %}">
 {% endblock %}
 <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">

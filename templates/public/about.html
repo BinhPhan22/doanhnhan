@@ -1,9 +1,28 @@
 {% extends "base.html" %}
 {% block title %}Giới thiệu – doanhnhan.wiki{% endblock %}
 {% block content %}
-<section class="hero"><div class="container"><p class="eyebrow">Giới thiệu</p><h1>Nơi lưu giữ hành trình của doanh nhân trẻ tiêu biểu Việt Nam.</h1></div></section>
+<section class="hero"><div class="container"><p class="eyebrow">Giới thiệu</p><h1>Nơi lưu giữ hành trình của mọi doanh nhân Việt Nam.</h1></div></section>
 <div class="container layout">
-  <article class="main card card-lg prose">{% if site.about_md %}{{ site.about_md|md }}{% else %}<p>doanhnhan.wiki là trang cộng đồng lưu giữ hồ sơ doanh nhân trẻ tiêu biểu Việt Nam, doanh nghiệp của họ, hiệp hội, sự kiện và video phỏng vấn.</p>{% endif %}</article>
+  <article class="main card card-lg prose">
+    {% if site.about_md %}
+      {{ site.about_md|md }}
+    {% else %}
+      <p><strong>doanhnhan.wiki</strong> là trang cộng đồng lưu giữ hồ sơ doanh nhân Việt Nam, doanh nghiệp, ngành nghề, hiệp hội, sự kiện và video phỏng vấn.</p>
+      <ul>
+        <li><strong>Ai cũng xem được</strong> — không cần tài khoản.</li>
+        <li><strong>Muốn đưa thông tin lên</strong> — tạo tài khoản và chờ ban quản trị duyệt; mỗi nội dung vẫn được biên tập viên kiểm duyệt trước khi công bố.</li>
+        <li><strong>Minh bạch</strong> — mọi thông tin có nguồn trích dẫn và lịch sử sửa đổi.</li>
+      </ul>
+      <h2 id="tieu-chi">Tiêu chí đăng hồ sơ</h2>
+      <ol>
+        <li><strong>Người thật, việc thật:</strong> Có hoạt động kinh doanh xác minh được bằng ít nhất một trong: mã số thuế doanh nghiệp/hộ kinh doanh, website/fanpage chính thức, bài báo đã đăng, hoặc xác nhận của hiệp hội/YBA.</li>
+        <li><strong>Thông tin minh bạch, có kiểm chứng:</strong> Thông tin có nguồn, số liệu và thành tích phải kiểm chứng được; không bịa đặt, không phóng đại.</li>
+        <li><strong>Chuẩn mực nội dung:</strong> Không có nội dung vi phạm pháp luật, không công kích cá nhân, không quảng cáo trá hình.</li>
+        <li><strong>Đồng thuận và quyền dữ liệu:</strong> Chủ hồ sơ đồng ý công khai thông tin trên trang; muốn sửa hoặc gỡ thì gửi yêu cầu qua mục "Yêu cầu về dữ liệu".</li>
+      </ol>
+      <p><em>Cam kết thời gian:</em> Ban biên tập phản hồi trong vòng <strong>3 ngày làm việc</strong>. Nếu cần bổ sung, bạn sẽ nhận email nêu rõ cần bổ sung gì.</p>
+    {% endif %}
+  </article>
   <aside class="aside"><div class="card infobox"><dl>
     <dt>Đơn vị vận hành</dt><dd>{{ site.operator_name }}</dd>
     {% if site.address %}<dt>Địa chỉ</dt><dd>{{ site.address }}</dd>{% endif %}

@@ -137,8 +137,9 @@ class Command(BaseCommand):
             "companies": [{"company_id": None, "company_name": "Ví Mẫu (thử)", "role": "founder_ceo", "title": "",
                            "start_year": 2020, "end_year": None, "is_primary": True}],
             "memberships": [],
-            "sections": {"summary": "Phạm Gia Huy là nhân vật thử nghiệm, sáng lập một ví điện tử mẫu.[^1]",
-                         "journey": "Đoạn hành trình thử nghiệm, chưa đủ 500 từ để biên tập viên thấy cảnh báo."},
+            "sections": {"thong_tin_chung": "Phạm Gia Huy là nhân vật thử nghiệm, sáng lập một ví điện tử mẫu.[^1]",
+                         "khoi_dau": "Bắt đầu khởi nghiệp từ năm 2020.",
+                         "hien_tai": "Hiện tại đang phát triển sản phẩm ví điện tử."},
             "milestones": [{"year": 2020, "kind": "founding", "title": "Thành lập Ví Mẫu (thử)", "source_url": ""}],
             "sources": [{"title": "Nguồn thử nghiệm", "url": "https://example.com/bai-bao", "kind": "press"}],
             "videos": [],
@@ -167,7 +168,8 @@ class Command(BaseCommand):
             data["headline"] = "Nhà sáng lập & CEO An Phát (mẫu), Chủ tịch Hội mẫu"
             data["milestones"].append({"year": now.year, "kind": "position", "title": "Được bầu Chủ tịch Hội (thử)",
                                        "source_url": "https://example.com/quyet-dinh"})
-            data["sections"]["summary"] = data["sections"].get("summary", "") + " Cập nhật thử nghiệm năm nay."
+            k = "thong_tin_chung" if "thong_tin_chung" in data["sections"] else "summary"
+            data["sections"][k] = data["sections"].get(k, "") + " Cập nhật thử nghiệm năm nay."
             services.submit_revision(entity_type="person", data=data, author=member, instance=an,
                                      note="Chính chủ cập nhật chức danh và dấu mốc mới.")
 

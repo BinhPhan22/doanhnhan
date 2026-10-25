@@ -49,7 +49,7 @@ class SiteSettings(SingletonModel):
 
 class DonationSettings(SingletonModel):
     title = models.CharField("Tiêu đề", max_length=255,
-                             default="Cùng doanhnhan.wiki lưu giữ hành trình của doanh nhân trẻ tiêu biểu Việt Nam")
+                             default="Cùng doanhnhan.wiki lưu giữ hành trình của mọi doanh nhân Việt Nam")
     lead = models.TextField("Đoạn mở đầu", blank=True)
     body_md = models.TextField("Nội dung bài viết (markdown)", blank=True)
     memo = models.CharField("Nội dung chuyển khoản", max_length=120, default="Tài trợ website doanhnhan.wiki")
